@@ -60,10 +60,10 @@ function useLocalStorage<T>(key: string, initial: T) {
 export const AppProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage<boolean>("ui.sidebarCollapsed", false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage<boolean>("ui.sidebarCollapsed", true);
   const [llmPanelOpen, setLlmPanelOpen] = useLocalStorage<boolean>("ui.llmPanelOpen", false);
   const [llmPanelHeight, setLlmPanelHeight] = useLocalStorage<number>("ui.llmPanelHeight", 320);
-  const [theme, setThemeState] = useLocalStorage<"dark" | "light">("theme", "dark");
+  const [theme, setThemeState] = useLocalStorage<"dark" | "light">("theme", "light");
   const [language, setLanguage] = useLocalStorage<"en" | "es">("language", "en");
   const [pendingRequests, setPendingRequests] = useState<number>(3);
 
