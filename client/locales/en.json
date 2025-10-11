@@ -1,0 +1,94 @@
+{
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "requestAccess": "Request access",
+    "invalidCredentials": "Invalid email or password",
+    "accountLocked": "Account locked. Contact admin."
+  },
+  "registration": {
+    "title": "Create Account",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "confirmPassword": "Confirm Password",
+    "termsAccept": "I accept the Terms of Service",
+    "submitRequest": "Submit Request",
+    "requestSubmitted": "Request submitted! Admin will review and notify you."
+  },
+  "passwordRecovery": {
+    "title": "Reset Password",
+    "sendCode": "Send Code",
+    "enterCode": "Enter the 6-digit code sent to your email",
+    "verifyCode": "Verify Code",
+    "resendCode": "Resend code",
+    "codeExpired": "Code expired",
+    "newPassword": "New Password",
+    "resetPassword": "Reset Password",
+    "resetSuccess": "Password reset successful!"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "moduleData": "Data Module",
+    "moduleBacktest": "Backtesting Module",
+    "moduleBot": "BOT Module",
+    "dataDescription": "Market data visualization and analysis",
+    "backtestDescription": "Strategy testing and optimization",
+    "botDescription": "Live trading execution",
+    "launch": "Launch",
+    "traderAccessRequired": "Trader access required"
+  },
+  "userManagement": {
+    "title": "User Management",
+    "inviteUser": "Invite User",
+    "pendingRequests": "Pending Requests",
+    "approvePending": "Approve Pending",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "status": "Status",
+    "lastLogin": "Last Login",
+    "actions": "Actions",
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "delete": "Delete",
+    "invitationSent": "Invitation sent!"
+  },
+  "roles": {
+    "admin": "Admin",
+    "trader": "Trader",
+    "analystSenior": "Analyst Senior",
+    "analystJunior": "Analyst Junior"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "dataModule": "Data Module",
+    "backtesting": "Backtesting",
+    "botModule": "BOT Module",
+    "settings": "Settings",
+    "help": "Help & Docs",
+    "profile": "Profile",
+    "logout": "Logout",
+    "userManagement": "User Management"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "success": "Success!",
+    "error": "Error",
+    "warning": "Warning"
+  }
+}
