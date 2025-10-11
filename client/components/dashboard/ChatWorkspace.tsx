@@ -6,7 +6,7 @@ import { Image, Mic, SendHorizonal, Plus } from "lucide-react";
 export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
   return (
     <div className="min-h-screen grid" style={{ gridTemplateColumns: "280px 1fr" }}>
-      <div className="border-r border-border/60 bg-background/60 p-4 hidden md:block">
+      <div className="border-r border-border/60 bg-background/60 p-4 hidden md:block mb-[200px]">
         <div className="flex items-center justify-between mb-3">
           <div className="text-sm font-semibold text-muted-foreground">Conversations</div>
           <Button variant="secondary" size="sm"><Plus className="size-4 mr-1"/>New</Button>
@@ -21,7 +21,7 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
         </div>
       </div>
       <section className="min-h-screen flex flex-col items-center">
-        <div className="w-full max-w-[3518px] mx-auto px-4 pt-16 pb-6">
+        <div className="w-full max-w-[4063px] mx-auto flex flex-col justify-center items-center px-4 pt-16 pb-6 mb-[200px]">
           <div className="text-center mb-8">
             <div className="text-3xl font-extrabold tracking-tight"><span className="text-primary">NQ</span>HUB</div>
             {title && <p className="mt-1 text-sm text-muted-foreground">{title}</p>}
