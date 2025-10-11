@@ -1,0 +1,94 @@
+{
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "rememberMe": "Recordarme",
+    "requestAccess": "Solicitar acceso",
+    "invalidCredentials": "Correo o contraseña inválidos",
+    "accountLocked": "Cuenta bloqueada. Contacta al admin."
+  },
+  "registration": {
+    "title": "Crear Cuenta",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "phone": "Teléfono",
+    "confirmPassword": "Confirmar Contraseña",
+    "termsAccept": "Acepto los Términos de Servicio",
+    "submitRequest": "Enviar Solicitud",
+    "requestSubmitted": "¡Solicitud enviada! El admin revisará y te notificará."
+  },
+  "passwordRecovery": {
+    "title": "Restablecer Contraseña",
+    "sendCode": "Enviar Código",
+    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo",
+    "verifyCode": "Verificar Código",
+    "resendCode": "Reenviar código",
+    "codeExpired": "Código expirado",
+    "newPassword": "Nueva Contraseña",
+    "resetPassword": "Restablecer Contraseña",
+    "resetSuccess": "¡Contraseña restablecida exitosamente!"
+  },
+  "dashboard": {
+    "title": "Panel Principal",
+    "moduleData": "Módulo de Datos",
+    "moduleBacktest": "Módulo de Backtesting",
+    "moduleBot": "Módulo BOT",
+    "dataDescription": "Visualización y análisis de datos de mercado",
+    "backtestDescription": "Prueba y optimización de estrategias",
+    "botDescription": "Ejecución de trading en vivo",
+    "launch": "Abrir",
+    "traderAccessRequired": "Se requiere acceso de Trader"
+  },
+  "userManagement": {
+    "title": "Gestión de Usuarios",
+    "inviteUser": "Invitar Usuario",
+    "pendingRequests": "Solicitudes Pendientes",
+    "approvePending": "Aprobar Pendientes",
+    "name": "Nombre",
+    "email": "Correo",
+    "phone": "Teléfono",
+    "role": "Rol",
+    "status": "Estado",
+    "lastLogin": "Último Inicio",
+    "actions": "Acciones",
+    "edit": "Editar",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "delete": "Eliminar",
+    "invitationSent": "¡Invitación enviada!"
+  },
+  "roles": {
+    "admin": "Administrador",
+    "trader": "Trader",
+    "analystSenior": "Analista Senior",
+    "analystJunior": "Analista Junior"
+  },
+  "nav": {
+    "dashboard": "Panel Principal",
+    "dataModule": "Módulo de Datos",
+    "backtesting": "Backtesting",
+    "botModule": "Módulo BOT",
+    "settings": "Configuración",
+    "help": "Ayuda y Documentos",
+    "profile": "Perfil",
+    "logout": "Cerrar Sesión",
+    "userManagement": "Gestión de Usuarios"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "loading": "Cargando...",
+    "success": "¡Éxito!",
+    "error": "Error",
+    "warning": "Advertencia"
+  }
+}
