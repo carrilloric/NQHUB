@@ -21,7 +21,7 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
         </div>
       </div>
       <section className="min-h-screen flex flex-col items-center">
-        <div className="w-full max-w-3xl mx-auto px-4 pt-16 pb-6">
+        <div className="w-full max-w-[3518px] mx-auto px-4 pt-16 pb-6">
           <div className="text-center mb-8">
             <div className="text-3xl font-extrabold tracking-tight"><span className="text-primary">NQ</span>HUB</div>
             {title && <p className="mt-1 text-sm text-muted-foreground">{title}</p>}
@@ -35,7 +35,7 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
                   <Button variant="ghost" size="sm"><Mic className="size-4 mr-1"/>Voice</Button>
                   <Button variant="ghost" size="sm"><Image className="size-4 mr-1"/>Image</Button>
                 </div>
-                <Button size="sm"><SendHorizonal className="size-4 mr-1"/>Send</Button>
+                <Button size="sm"><SendHorizonal className="size-4"/></Button>
               </div>
             </div>
             <p className="mt-2 text-xs text-muted-foreground text-center">Tip: Shift+Enter for newline</p>
