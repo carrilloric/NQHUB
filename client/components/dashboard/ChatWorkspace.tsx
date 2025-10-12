@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Image, Mic, SendHorizonal, Plus, Globe, Cog, Paperclip, AudioLines } from "lucide-react";
+import { Mic, Globe, Cog, Paperclip, AudioLines } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
@@ -50,11 +49,6 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
         </div>
         <div className="w-full">
           <div className="rounded-2xl border border-input bg-card shadow-lg">
-            <div className="flex items-center gap-2 px-3 pt-3">
-              <Button variant="secondary" size="sm" className="rounded-lg px-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></Button>
-              <Button variant="secondary" size="sm" className="rounded-lg px-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3v4"></path><path d="M19 3v4"></path><rect width="14" height="12" x="5" y="7" rx="2"></rect></svg></Button>
-              <Button variant="secondary" size="sm" className="rounded-lg px-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18"></path><path d="M3 12h18"></path></svg></Button>
-            </div>
             <div className="relative">
               <textarea
                 rows={1}
