@@ -17,23 +17,30 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
 
   useEffect(() => {
     const full = suggestions[idx];
-    let delay = isDeleting ? 28 : 55;
+    const typingDelay = Math.max(28, Math.floor(3000 / Math.max(full.length, 1))); // ~3s per phrase
+    const deletingDelay = Math.max(18, Math.floor(1600 / Math.max(full.length, 1)));
 
-    if (!isDeleting && hint === full) {
-      delay = 1400;
-      setIsDeleting(true);
-    } else if (isDeleting && hint === "") {
-      setIsDeleting(false);
-      setIdx((i) => (i + 1) % suggestions.length);
-      delay = 450;
-    } else {
+    const atEnd = hint === full && !isDeleting;
+    const atStart = hint === "" && isDeleting;
+
+    const delay = atEnd ? 1200 : atStart ? 450 : isDeleting ? deletingDelay : typingDelay;
+
+    const t = setTimeout(() => {
+      if (atEnd) {
+        setIsDeleting(true);
+        return;
+      }
+      if (atStart) {
+        setIsDeleting(false);
+        setIdx((i) => (i + 1) % suggestions.length);
+        return;
+      }
       const next = isDeleting ? full.slice(0, hint.length - 1) : full.slice(0, hint.length + 1);
       setHint(next);
-    }
+    }, delay);
 
-    const t = setTimeout(() => {}, delay);
     return () => clearTimeout(t);
-  }, [hint, isDeleting, idx]);
+  }, [hint, isDeleting, idx, suggestions]);
   return (
     <section className="min-h-screen flex flex-col items-center">
       <div className="w-full max-w-3xl mx-auto flex flex-col justify-end items-center px-4 pb-16" style={{ minHeight: "80vh" }}>
