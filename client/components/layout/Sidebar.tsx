@@ -21,7 +21,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className={cn("fixed left-0 top-16 bottom-0 border-r border-border/60 bg-sidebar text-sidebar-foreground z-30 transition-all", ui.sidebarCollapsed ? "w-14" : "w-60")}> 
       <div className="h-full flex flex-col">
-        <nav className="flex-1 py-3">
+        <nav className="py-3">
           {items.filter(i => i.visible).map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-sidebar-accent", isActive && "bg-sidebar-accent") }>
               <Icon className="size-5" />
@@ -35,7 +35,22 @@ export const Sidebar: React.FC = () => {
             </NavLink>
           )}
         </nav>
-        <button onClick={() => ui.setSidebarCollapsed(!ui.sidebarCollapsed)} className="m-3 px-3 py-2 text-xs rounded bg-sidebar-accent hover:opacity-90">{ui.sidebarCollapsed ? ">>" : "<<"}</button>
+        {!ui.sidebarCollapsed && (
+          <div className="mt-1 pt-2 border-t border-border/60">
+            <div className="px-3 text-xs font-semibold text-muted-foreground mb-1">Conversations</div>
+            <div className="max-h-64 overflow-auto pb-1">
+              {["Welcome", "Market recap", "Strategy idea"].map((t) => (
+                <button key={t} className="w-full text-left px-3 py-2 text-sm rounded hover:bg-sidebar-accent">
+                  <div className="font-medium truncate">{t}</div>
+                  <div className="text-xs text-muted-foreground truncate">Last message preview…</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="mt-auto">
+          <button onClick={() => ui.setSidebarCollapsed(!ui.sidebarCollapsed)} className="m-3 px-3 py-2 text-xs rounded bg-sidebar-accent hover:opacity-90">{ui.sidebarCollapsed ? ">>" : "<<"}</button>
+        </div>
       </div>
     </aside>
   );
