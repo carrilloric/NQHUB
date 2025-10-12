@@ -7,13 +7,13 @@ import { Link } from "react-router-dom";
 export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
   return (
     <section className="min-h-screen flex flex-col items-center">
-      <div className="w-full max-w-3xl mx-auto flex flex-col justify-center items-center px-4 pt-24 pb-12">
+      <div className="w-full max-w-3xl mx-auto flex flex-col justify-end items-center px-4 pb-16" style={{ minHeight: "80vh" }}>
         <div className="text-center mb-6">
           <div className="text-5xl font-extrabold tracking-tight"><span className="text-primary">NQ</span>HUB</div>
           {title && <p className="mt-2 text-sm text-muted-foreground">{title}</p>}
         </div>
         <div className="w-full">
-          <div className="rounded-2xl border border-input bg-card shadow-sm">
+          <div className="rounded-2xl border border-input bg-card shadow-lg">
             <div className="flex items-center gap-2 px-3 pt-3">
               <Button variant="secondary" size="sm" className="rounded-lg px-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></Button>
               <Button variant="secondary" size="sm" className="rounded-lg px-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3v4"></path><path d="M19 3v4"></path><rect width="14" height="12" x="5" y="7" rx="2"></rect></svg></Button>
@@ -34,7 +34,7 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
         </div>
         <div className="mt-6 flex flex-wrap gap-3 justify-center">
           <QuickPill to="/data" label="Data Module" />
-          <QuickPill to="/stats" label="Stats" />
+          <QuickPill to="/stats" label="NQ Stats" />
           <QuickPill to="/backtesting" label="BackTesting" />
           <QuickPill to="/tradecademy" label="Tradecademy" />
         </div>
@@ -44,7 +44,7 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
 };
 
 const QuickPill: React.FC<{ to: string; label: string }> = ({ to, label }) => (
-  <Link to={to} className="inline-flex items-center gap-2 rounded-full border border-input bg-card px-3 py-1.5 text-sm shadow-sm hover:bg-accent/40">
+  <Link to={to} className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/20 px-3 py-1.5 text-sm shadow hover:bg-accent/30 transition-colors">
     {label}
   </Link>
 );
