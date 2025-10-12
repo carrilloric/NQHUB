@@ -20,13 +20,11 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
               <Button variant="secondary" size="sm" className="rounded-lg px-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18"></path><path d="M3 12h18"></path></svg></Button>
             </div>
             <textarea rows={1} placeholder="Ask anything or @mention a Space" className={cn("w-full resize-none bg-transparent outline-none px-4 py-4 text-base", "placeholder:text-muted-foreground")}></textarea>
-            <div className="flex items-center justify-between px-3 pb-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <IconChip title="Set sources for search"><Globe className="size-4" /></IconChip>
-                <IconChip title="Choose a model" active><Cog className="size-4" /></IconChip>
-                <IconChip title="Attach a file"><Paperclip className="size-4" /></IconChip>
-                <IconChip title="Dictation"><Mic className="size-4" /></IconChip>
-              </div>
+            <div className="flex items-center justify-end gap-2 px-3 pb-3 text-muted-foreground">
+              <IconChip title="Set sources for search"><Globe className="size-4" /></IconChip>
+              <IconChip title="Choose a model" active><Cog className="size-4" /></IconChip>
+              <IconChip title="Attach a file"><Paperclip className="size-4" /></IconChip>
+              <IconChip title="Dictation"><Mic className="size-4" /></IconChip>
               <button title="Voice mode" className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-primary text-primary-foreground shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <AudioLines className="size-4" />
               </button>
