@@ -36,6 +36,8 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><WithLayout title="Settings" /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute><WithLayout title="Help & Docs" /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><WithLayout title="User Management" /></ProtectedRoute>} />
+            <Route path="/stats" element={<ProtectedRoute><WithLayout title="Stats" /></ProtectedRoute>} />
+            <Route path="/tradecademy" element={<ProtectedRoute><WithLayout title="Tradecademy" /></ProtectedRoute>} />
             <Route path="/auth/request-access" element={<WithLayout title="Request Access" />} />
             <Route path="/auth/forgot-password" element={<WithLayout title="Password Recovery" />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
