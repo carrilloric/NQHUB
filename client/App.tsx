@@ -32,6 +32,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/data" element={<ProtectedRoute><DataModule /></ProtectedRoute>} />
+            <Route path="/data/charts" element={<ProtectedRoute><DataModule defaultTab="charts" /></ProtectedRoute>} />
+            <Route path="/data/analysis" element={<ProtectedRoute><DataModule defaultTab="analysis" /></ProtectedRoute>} />
             <Route path="/backtesting" element={<ProtectedRoute><WithLayout title="Backtesting Module" /></ProtectedRoute>} />
             <Route path="/bot" element={<ProtectedRoute><WithLayout title="BOT Module" description="Trader access required" /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><WithLayout title="Settings" /></ProtectedRoute>} />
