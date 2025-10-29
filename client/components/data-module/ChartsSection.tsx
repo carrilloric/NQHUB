@@ -96,7 +96,7 @@ export const ChartsSection: React.FC = () => {
               type="checkbox"
               checked={showVolumeProfile}
               onChange={(e) => setShowVolumeProfile(e.target.checked)}
-              className="size-4 rounded border border-border/60 bg-[#0c1624] text-primary focus:ring-primary"
+              className="size-4 rounded border border-border/60 bg-[#0c1624] accent-primary"
             />
             <span>Volume Profile</span>
           </label>
