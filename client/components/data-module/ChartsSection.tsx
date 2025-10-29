@@ -31,29 +31,20 @@ export const ChartsSection: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-      <div className="rounded-lg border border-border bg-card p-4">
-        <h2 className="font-semibold mb-4">Chart Filters</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Asset / Symbol</label>
-            <Select value={selectedAsset} onValueChange={setSelectedAsset}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {assets.map((asset) => (
-                  <SelectItem key={asset} value={asset}>
-                    {asset}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="rounded-lg border border-border bg-card p-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="size-5 text-primary" />
+            <h2 className="font-semibold text-lg">Chart Analysis</h2>
           </div>
+          <p className="text-sm text-muted-foreground">NQ Futures - Price Data Visualization</p>
+        </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Timeframe</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-foreground">Timeframe</label>
             <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -66,27 +57,27 @@ export const ChartsSection: React.FC = () => {
             </Select>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Start Date</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-foreground">Start Date</label>
             <div className="relative">
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="pl-10"
+                className="bg-background pl-10"
               />
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">End Date</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-foreground">End Date</label>
             <div className="relative">
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="pl-10"
+                className="bg-background pl-10"
               />
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             </div>
@@ -94,33 +85,29 @@ export const ChartsSection: React.FC = () => {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-6 flex-1 flex flex-col items-center justify-center overflow-hidden">
-        <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-center text-muted-foreground">
-          <div>
-            <p className="font-semibold mb-2">📊 Chart Ready</p>
-            <p className="text-sm">
-              Asset: <span className="font-medium text-foreground">{selectedAsset}</span>
-            </p>
-            <p className="text-sm">
-              Timeframe: <span className="font-medium text-foreground">{selectedTimeframe}</span>
-            </p>
-            <p className="text-xs mt-2">
-              Period: {startDate} to {endDate}
-            </p>
-          </div>
-
-          <div className="w-full max-w-2xl h-64 bg-accent/20 rounded-lg border border-dashed border-border flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Chart visualization area</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Data from database will render here
-              </p>
+      <div className="rounded-lg border border-border bg-card flex-1 flex flex-col overflow-hidden">
+        <div className="p-6 border-b border-border">
+          <h3 className="font-semibold">NQ Futures - {selectedTimeframe} Chart</h3>
+          <div className="flex gap-4 mt-3 text-sm">
+            <div>
+              <p className="text-muted-foreground">Timeframe</p>
+              <p className="font-semibold text-foreground">{selectedTimeframe}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Period</p>
+              <p className="font-semibold text-foreground">{startDate} to {endDate}</p>
             </div>
           </div>
+        </div>
 
-          <p className="text-xs text-muted-foreground">
-            Displaying processed data for the selected filters
-          </p>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full h-full bg-gradient-to-br from-accent/10 to-accent/5 rounded-lg border border-dashed border-border/50 flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <TrendingUp className="size-6" />
+              <p className="text-sm font-medium">Chart visualization area</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Processed price data from database will be rendered here</p>
+          </div>
         </div>
       </div>
     </div>
