@@ -135,10 +135,10 @@ export const DataModule: React.FC = () => {
       <Sidebar />
       <main className="pl-14 md:pl-60 p-0 flex">
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-auto flex flex-col gap-4 p-6">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">Data Module</h1>
-              <p className="text-muted-foreground">Upload and analyze your trading data with multiple timeframe transformations</p>
+          <div className="flex-1 overflow-auto flex flex-col gap-6 p-6">
+            <div className="space-y-2">
+              <h1 className="text-4xl font-bold tracking-tighter">Data Module</h1>
+              <p className="text-base text-muted-foreground">Upload and analyze your trading data with multiple timeframe transformations</p>
             </div>
 
             <Tabs defaultValue="upload" className="flex-1 flex flex-col overflow-hidden">
