@@ -39,11 +39,11 @@ export default function Index() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <div className="flex-1 grid place-items-center p-6">
         <div className="w-full max-w-md">
-          <div className="text-center mb-6">
-            <div className="text-3xl font-extrabold tracking-tight"><span className="text-primary">NQ</span>HUB</div>
-            <p className="mt-2 text-sm text-muted-foreground">Secure sign-in</p>
+          <div className="text-center mb-8 space-y-2">
+            <div className="text-4xl font-extrabold tracking-tighter"><span className="text-primary">NQ</span>HUB</div>
+            <p className="text-sm text-muted-foreground">Professional Trading Platform</p>
           </div>
-          <form onSubmit={onSubmit} className="bg-card border border-border/60 rounded-lg p-6 shadow-md">
+          <form onSubmit={onSubmit} className="bg-card border border-border/40 rounded-lg p-6 shadow-lg space-y-4">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="email">{t("auth.email")}</Label>
