@@ -25,12 +25,12 @@ export const FileList: React.FC<FileListProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle2 className="size-4 text-green-500" />;
+        return <CheckCircle2 className="size-4 text-bullish" />;
       case "error":
-        return <AlertCircle className="size-4 text-red-500" />;
+        return <AlertCircle className="size-4 text-bearish" />;
       case "uploading":
       case "transforming":
-        return <Loader className="size-4 text-blue-500 animate-spin" />;
+        return <Loader className="size-4 text-primary animate-spin" />;
       default:
         return null;
     }
