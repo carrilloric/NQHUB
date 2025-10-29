@@ -133,13 +133,29 @@ export const FileList: React.FC<FileListProps> = ({
                         ))}
                       </div>
                     )}
+
+                    {file.status === "ready" && (
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onProcessFile(file.id);
+                          }}
+                          className="flex-1"
+                        >
+                          <Play className="size-3 mr-1" />
+                          Process
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteFile(file.id);
                     }}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors mt-1"
                   >
                     <Trash2 className="size-4" />
                   </button>
