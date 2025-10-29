@@ -28,15 +28,16 @@ export const DataModule: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>("1h");
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = (file: File, type: "prices" | "news") => {
     const newFile: UploadedFile = {
       id: Date.now().toString(),
       name: file.name,
       size: file.size,
       uploadedAt: new Date(),
       progress: 0,
+      type,
       status: "uploading",
-      transformations: [
+      transformations: type === "prices" ? [
         { timeframe: "30s", status: "pending" },
         { timeframe: "1m", status: "pending" },
         { timeframe: "5m", status: "pending" },
@@ -45,7 +46,7 @@ export const DataModule: React.FC = () => {
         { timeframe: "4h", status: "pending" },
         { timeframe: "1d", status: "pending" },
         { timeframe: "1w", status: "pending" },
-      ],
+      ] : undefined,
     };
 
     setFiles([newFile, ...files]);
