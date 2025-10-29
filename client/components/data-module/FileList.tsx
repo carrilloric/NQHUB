@@ -6,6 +6,7 @@ import type { UploadedFile } from "@/pages/DataModule";
 
 interface FileListProps {
   files: UploadedFile[];
+  fileType: "prices" | "news";
   selectedFile: UploadedFile | null;
   onSelectFile: (file: UploadedFile) => void;
   onDeleteFile: (fileId: string) => void;
@@ -14,11 +15,13 @@ interface FileListProps {
 
 export const FileList: React.FC<FileListProps> = ({
   files,
+  fileType,
   selectedFile,
   onSelectFile,
   onDeleteFile,
   onProcessFile,
 }) => {
+  const filteredFiles = files.filter(f => f.type === fileType);
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
