@@ -37,8 +37,8 @@ export const Sidebar: React.FC = () => {
                   cn(
                     "group relative flex items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-all",
                     isActive
-                      ? "border border-primary/40 bg-primary/8 text-foreground shadow-inner"
-                      : "border border-transparent text-muted-foreground/80 hover:border-primary/25 hover:bg-sidebar-accent/60 hover:text-foreground",
+                      ? "border border-primary/40 bg-primary/10 text-foreground shadow-inner"
+                      : "border border-transparent text-muted-foreground/80 hover:border-primary/30 hover:bg-sidebar-accent/60 hover:text-foreground",
                   )
                 }
               >
