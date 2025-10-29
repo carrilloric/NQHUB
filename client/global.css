@@ -43,6 +43,9 @@
 
     --radius: 0.45rem;
 
+    --bullish: 152 63% 49%; /* #2cd699 */
+    --bearish: 356 70% 52%; /* #e1525c */
+
     --sidebar-background: 218 40% 6%; /* #070b12 */
     --sidebar-foreground: 214 32% 92%;
     --sidebar-primary: 187 86% 45%;
