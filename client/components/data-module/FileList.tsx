@@ -17,6 +17,7 @@ export const FileList: React.FC<FileListProps> = ({
   selectedFile,
   onSelectFile,
   onDeleteFile,
+  onProcessFile,
 }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
