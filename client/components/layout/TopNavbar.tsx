@@ -1,7 +1,7 @@
 import React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { useAuth, useI18n, useUI } from "@/state/app";
 import { Bell, ChevronDown, Globe, Languages, LogOut, Moon, Settings, Sun, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const TopNavbar: React.FC = () => {
