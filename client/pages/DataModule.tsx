@@ -140,51 +140,27 @@ export const DataModule: React.FC = () => {
               <p className="text-muted-foreground">Upload and analyze your trading data with multiple timeframe transformations</p>
             </div>
 
-            <DataUpload onUpload={handleFileUpload} />
+            <Tabs defaultValue="upload" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload">📤 Data Upload</TabsTrigger>
+                <TabsTrigger value="charts">📊 Charts</TabsTrigger>
+              </TabsList>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
-              <div className="lg:col-span-2 flex flex-col gap-4 overflow-hidden">
-                {selectedFile?.type === "prices" && (
-                  <>
-                    <ChartArea selectedFile={selectedFile} selectedTimeframe={selectedTimeframe} />
-                    <TimeframeSelector selectedTimeframe={selectedTimeframe} onTimeframeChange={setSelectedTimeframe} />
-                  </>
-                )}
-                {selectedFile?.type === "news" && (
-                  <div className="rounded-lg border border-border bg-card p-6 flex-1 flex flex-col items-center justify-center">
-                    <div className="text-center max-w-md">
-                      <p className="text-2xl mb-2">📰</p>
-                      <p className="font-semibold mb-2">{selectedFile.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        News content preview would be displayed here. Uploaded on {selectedFile.uploadedAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {!selectedFile && (
-                  <div className="rounded-lg border border-border bg-card flex-1 flex flex-col items-center justify-center text-center text-muted-foreground">
-                    <p className="font-semibold">Select a file to view content</p>
-                    <p className="text-sm">Upload price or news data to get started</p>
-                  </div>
-                )}
-              </div>
-              <div className="overflow-hidden flex flex-col gap-4">
-                <FileList
+              <TabsContent value="upload" className="flex-1 overflow-hidden">
+                <DataUploadSection
                   files={files}
-                  fileType="prices"
                   selectedFile={selectedFile}
                   onSelectFile={setSelectedFile}
                   onDeleteFile={handleDeleteFile}
                   onProcessFile={handleProcessFile}
+                  onUpload={handleFileUpload}
                 />
-                <NewsList
-                  files={files}
-                  selectedFile={selectedFile}
-                  onSelectFile={setSelectedFile}
-                  onDeleteFile={handleDeleteFile}
-                />
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="charts" className="flex-1 overflow-hidden">
+                <ChartsSection />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
         <ChatWorkspaceAside />
