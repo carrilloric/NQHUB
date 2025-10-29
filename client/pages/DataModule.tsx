@@ -137,9 +137,9 @@ export const DataModule: React.FC = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-auto px-4 py-8 md:px-10">
             <div className="flex flex-col gap-6">
-              <div className="space-y-2">
-                <h1 className="text-4xl font-black uppercase tracking-[0.36em] text-foreground/95">Data Module</h1>
-                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-muted-foreground/70">
+              <div className="space-y-3">
+                <h1 className="text-5xl font-extrabold tracking-tight text-foreground">Data Module</h1>
+                <p className="text-sm text-muted-foreground/80">
                   Upload and analyze NQ datasets across pipelines and chart views
                 </p>
               </div>
