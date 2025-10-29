@@ -69,6 +69,9 @@
   "nav": {
     "dashboard": "Panel Principal",
     "dataModule": "Módulo de Datos",
+    "dataIngest": "Ingesta de Datos & ETL",
+    "dataCharts": "Gráficos",
+    "dataAnalysis": "Análisis de Datos",
     "backtesting": "Backtesting",
     "botModule": "Módulo BOT",
     "settings": "Configuración",
