@@ -140,7 +140,7 @@ const IconChip: React.FC<{ title?: string; active?: boolean; highlight?: boolean
       highlight
         ? "border-primary/50 bg-primary/15 text-primary"
         : active
-        ? "border-secondary/50 bg-secondary/20 text-secondary-foreground/80"
+        ? "border-secondary/50 bg-secondary/20 text-secondary"
         : "border-border/40 bg-transparent text-muted-foreground/70 hover:border-primary/40 hover:text-primary",
     )}
   >
