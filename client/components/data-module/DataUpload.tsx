@@ -52,18 +52,31 @@ export const DataUpload: React.FC<DataUploadProps> = ({ onUpload }) => {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <Select value={selectedType} onValueChange={(value) => setSelectedType(value as "prices" | "news")}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="prices">📊 Prices</SelectItem>
-            <SelectItem value="news">📰 News</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-sm text-muted-foreground">Select data type before uploading</p>
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <label className="text-sm font-semibold text-foreground block mb-2">Data Type</label>
+          <Select value={selectedType} onValueChange={(value) => setSelectedType(value as "prices" | "news")}>
+            <SelectTrigger className="w-48 bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="prices" className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="size-4" />
+                  <span>Price Data</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="news" className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Newspaper className="size-4" />
+                  <span>News Feed</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1" />
       </div>
 
       <div
