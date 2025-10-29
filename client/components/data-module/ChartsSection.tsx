@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, TrendingUp } from "lucide-react";
+import { Calendar, TrendingUp, Zap } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -8,9 +8,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { MultiChartView } from "./charts/MultiChartView";
+import { IndicatorLibrary } from "./indicators/IndicatorLibrary";
+import { ActiveIndicatorsList } from "./indicators/ActiveIndicatorsList";
+import { useDataModuleStore } from "@/state/data-module.store";
 
 export const ChartsSection: React.FC = () => {
-  const [selectedTimeframe, setSelectedTimeframe] = useState<string>("1h");
+  const { selectedTimeframe, setTimeframe, showVolumeProfile, showDeltaProfile, setShowVolumeProfile, setShowDeltaProfile } = useDataModuleStore();
   const [startDate, setStartDate] = useState<string>(
     new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
