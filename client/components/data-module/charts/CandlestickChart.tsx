@@ -68,61 +68,63 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   const percentChange = ((priceChange / lastCandle.open) * 100).toFixed(2);
 
   return (
-    <div className="w-full h-full flex flex-col bg-card rounded-lg border border-border overflow-hidden">
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="size-4 text-primary" />
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-b from-[#111c2d] via-[#0b1523] to-[#070c16]">
+      <div className="flex items-center justify-between border-b border-border/40 bg-[#0d1726]/70 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="rounded-full border border-primary/40 bg-primary/15 p-2">
+            <TrendingUp className="size-4 text-primary" />
+          </div>
           <div>
-            <h3 className="font-semibold">{title}</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-sm font-bold uppercase tracking-[0.28em] text-foreground/90">{title}</h3>
+            <p className="text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground/70">
               {data.length} candles • {(highPrice - lowPrice).toFixed(2)} range
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="font-semibold text-lg">{lastCandle.close.toFixed(2)}</p>
-          <p className={`text-sm ${priceChange >= 0 ? "text-green-600" : "text-red-600"}`}>
-            {priceChange >= 0 ? "+" : ""}{priceChange.toFixed(2)} ({percentChange}%)
+          <p className="text-lg font-semibold text-foreground/95">{lastCandle.close.toFixed(2)}</p>
+          <p className={cn("text-sm font-semibold", priceChange >= 0 ? "text-bullish" : "text-bearish")}>
+            {priceChange >= 0 ? "+" : ""}
+            {priceChange.toFixed(2)} ({percentChange}%)
           </p>
         </div>
       </div>
 
       <div
         ref={containerRef}
-        style={{ height: `calc(100% - 80px)` }}
-        className="flex-1 relative bg-gradient-to-b from-background to-background/50"
+        style={{ height: `calc(100% - 100px)` }}
+        className="relative flex-1 bg-[radial-gradient(circle_at_center,_rgba(23,211,218,0.08),_transparent)]"
       >
-        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-          <div className="text-center">
-            <p className="text-sm font-medium mb-2">SciChart Integration Ready</p>
-            <p className="text-xs">
-              Install: <code className="bg-accent px-2 py-1 rounded">npm install scichart</code>
+        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/70">
+          <div className="text-center space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-foreground/75">SciChart Integration Ready</p>
+            <p className="text-xs uppercase tracking-[0.24em]">
+              Install <code className="rounded bg-primary/20 px-2 py-1 text-primary">npm install scichart</code>
             </p>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground/70 uppercase tracking-[0.24em]">
               Chart will render with {data.length} candles
             </p>
           </div>
         </div>
-
         {/* SciChart will render here once installed and configured */}
       </div>
 
-      <div className="p-3 border-t border-border text-xs text-muted-foreground">
+      <div className="border-t border-border/40 bg-[#0d1726]/70 px-5 py-3 text-[0.7rem] uppercase tracking-[0.24em] text-muted-foreground/75">
         <div className="grid grid-cols-5 gap-2">
           <div>
-            <span className="text-muted-foreground">O:</span> {lastCandle.open.toFixed(2)}
+            <span className="text-muted-foreground/60">O:</span> {lastCandle.open.toFixed(2)}
           </div>
           <div>
-            <span className="text-muted-foreground">H:</span> {lastCandle.high.toFixed(2)}
+            <span className="text-muted-foreground/60">H:</span> {lastCandle.high.toFixed(2)}
           </div>
           <div>
-            <span className="text-muted-foreground">L:</span> {lastCandle.low.toFixed(2)}
+            <span className="text-muted-foreground/60">L:</span> {lastCandle.low.toFixed(2)}
           </div>
           <div>
-            <span className="text-muted-foreground">C:</span> {lastCandle.close.toFixed(2)}
+            <span className="text-muted-foreground/60">C:</span> {lastCandle.close.toFixed(2)}
           </div>
           <div>
-            <span className="text-muted-foreground">V:</span> {(lastCandle.volume / 1000000).toFixed(1)}M
+            <span className="text-muted-foreground/60">V:</span> {(lastCandle.volume / 1000000).toFixed(1)}M
           </div>
         </div>
       </div>
