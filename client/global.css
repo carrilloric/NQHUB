@@ -54,43 +54,43 @@
   }
 
   .dark {
-    /* Dark theme (default) */
-    --background: 222 47% 11%; /* #0F172A */
-    --foreground: 0 0% 100%; /* #FFFFFF */
+    /* Dark theme - Professional Trading Platform */
+    --background: 218 28% 7%; /* #0A0F1B - Very dark blue-grey */
+    --foreground: 0 0% 98%; /* #FAFAFA - Almost white */
 
-    --card: 217 33% 17%; /* #1E293B */
-    --card-foreground: 0 0% 100%;
+    --card: 217 27% 12%; /* #141B2D - Dark card background */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 217 33% 17%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 217 27% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 340 82% 52%; /* Accent pink/red #E91E63 */
+    --primary: 142 71% 45%; /* #10B981 - Emerald green (bullish) */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 217 27% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 216 20% 65%; /* #CBD5E1 */
+    --muted: 217 27% 18%;
+    --muted-foreground: 216 14% 62%; /* #9CA3AF - Grey text */
 
-    --accent: 340 82% 52%;
+    --accent: 142 71% 45%; /* #10B981 - Green accent */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 63%; /* #EF4444 */
+    --destructive: 0 84% 60%; /* #EF4444 - Red (bearish) */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 28% 28%; /* #334155 */
-    --input: 215 28% 28%;
-    --ring: 340 82% 52%;
+    --border: 217 22% 22%; /* #233445 - Subtle borders */
+    --input: 217 22% 22%;
+    --ring: 142 71% 45%;
 
-    --sidebar-background: 222 50% 8%; /* #0B1120 */
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 340 82% 52%;
+    --sidebar-background: 218 35% 5%; /* #050A15 - Darker sidebar */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 142 71% 45%; /* Green for active items */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 215 28% 28%;
-    --sidebar-ring: 340 82% 52%;
+    --sidebar-accent: 217 27% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 217 22% 22%;
+    --sidebar-ring: 142 71% 45%;
   }
 }
 
