@@ -12,45 +12,45 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    /* Light theme (optional) */
-    --background: 210 40% 98%; /* #F8FAFC */
-    --foreground: 222 47% 11%; /* #0F172A */
+    /* Dark theme (default for all) */
+    --background: 218 28% 7%; /* #0A0F1B - Very dark blue-grey */
+    --foreground: 0 0% 98%; /* #FAFAFA - Almost white */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 217 27% 12%; /* #141B2D - Dark card background */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 217 27% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 217 91% 60%; /* Accent blue for light */
+    --primary: 142 71% 45%; /* #10B981 - Emerald green (bullish) */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 217 27% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 217 27% 18%;
+    --muted-foreground: 216 14% 62%; /* #9CA3AF - Grey text */
 
-    --accent: 217 91% 60%;
+    --accent: 142 71% 45%; /* #10B981 - Green accent */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 60%; /* #EF4444 - Red (bearish) */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 47% 11%;
+    --border: 217 22% 22%; /* #233445 - Subtle borders */
+    --input: 217 22% 22%;
+    --ring: 142 71% 45%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 210 20% 95%; /* #F1F5F9 */
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 218 35% 5%; /* #050A15 - Darker sidebar */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 142 71% 45%; /* Green for active items */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 217 27% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 217 22% 22%;
+    --sidebar-ring: 142 71% 45%;
   }
 
   .dark {
