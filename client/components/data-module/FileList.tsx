@@ -37,10 +37,12 @@ export const FileList: React.FC<FileListProps> = ({
     switch (status) {
       case "uploading":
         return "Uploading";
+      case "ready":
+        return "Ready to Process";
       case "transforming":
         return "Transforming";
       case "completed":
-        return "Ready";
+        return "Completed";
       case "error":
         return "Error";
       default:
