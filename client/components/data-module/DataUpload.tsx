@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Upload } from "lucide-react";
+import { Upload, BarChart3, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
