@@ -124,13 +124,33 @@ export const ChatWorkspace: React.FC<{ title?: string }> = ({ title }) => {
 };
 
 const QuickPill: React.FC<{ to: string; label: string }> = ({ to, label }) => (
-  <Link to={to} className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/20 px-3 py-1.5 text-sm shadow hover:bg-accent/30 transition-colors">
+  <Link
+    to={to}
+    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border/40 bg-gradient-to-br from-[#111b2c] to-[#0b131f] px-4 py-3 text-xs font-semibold uppercase tracking-[0.26em] text-muted-foreground/75 transition-all hover:border-primary/40 hover:text-primary"
+  >
     {label}
   </Link>
 );
 
-const IconChip: React.FC<{ title?: string; active?: boolean; children: React.ReactNode }> = ({ title, active, children }) => (
-  <span title={title} className={cn("inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors", active ? "bg-secondary border-input" : "border-transparent hover:bg-secondary")}>
+const IconChip: React.FC<{ title?: string; active?: boolean; highlight?: boolean; children: React.ReactNode }> = ({ title, active, highlight, children }) => (
+  <span
+    title={title}
+    className={cn(
+      "inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all",
+      highlight
+        ? "border-primary/50 bg-primary/15 text-primary"
+        : active
+        ? "border-secondary/50 bg-secondary/20 text-secondary-foreground/80"
+        : "border-border/40 bg-transparent text-muted-foreground/70 hover:border-primary/40 hover:text-primary",
+    )}
+  >
     {children}
   </span>
+);
+
+const StatBlock: React.FC<{ label: string; value: string; trend?: "bullish" | "bearish" }> = ({ label, value, trend }) => (
+  <div className="rounded-xl border border-border/40 bg-gradient-to-br from-[#111b22] to-[#0b121d] px-4 py-3 text-left shadow-inner">
+    <div className="text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">{label}</div>
+    <div className={cn("mt-2 text-lg font-bold tabular-nums", trend === "bullish" ? "text-bullish" : trend === "bearish" ? "text-bearish" : "text-foreground/90")}>{value}</div>
+  </div>
 );
