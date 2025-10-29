@@ -42,7 +42,8 @@ export const ChartArea: React.FC<ChartAreaProps> = ({
   selectedFile,
   selectedTimeframe,
 }) => {
-  const timeRange = selectedFile ? getTimeframeRange(selectedFile.uploadedAt, selectedTimeframe) : null;
+  const isPricesFile = selectedFile?.type === "prices";
+  const timeRange = isPricesFile && selectedFile ? getTimeframeRange(selectedFile.uploadedAt, selectedTimeframe) : null;
 
   return (
     <div className="rounded-lg border border-border bg-card flex flex-col h-full overflow-hidden">
