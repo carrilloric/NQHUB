@@ -90,7 +90,7 @@ const ToolbarIcon = React.forwardRef<HTMLButtonElement, ToolbarIconProps>(
       <Comp
         ref={ref}
         className={cn(
-          "relative inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-border/30 bg-transparent text-muted-foreground/80 transition-all hover:border-primary/70 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d141f]",
+          "relative inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-full border border-border/30 bg-transparent text-muted-foreground/80 transition-all hover:border-primary/70 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d141f]",
           className,
         )}
         type={asChild ? undefined : "button"}
