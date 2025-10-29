@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DataUploadSection } from "@/components/data-module/DataUploadSection";
 import { ChartsSection } from "@/components/data-module/ChartsSection";
+import { ETLDashboard } from "@/components/data-module/etl/ETLDashboard";
 import { ChatWorkspaceAside } from "@/components/dashboard/ChatWorkspaceAside";
 import { useI18n } from "@/state/app";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
