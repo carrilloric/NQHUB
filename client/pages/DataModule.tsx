@@ -58,16 +58,24 @@ export const DataModule: React.FC = () => {
         clearInterval(uploadInterval);
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === newFile.id ? { ...f, progress: 100, status: "transforming" } : f
+            f.id === newFile.id ? { ...f, progress: 100, status: "ready" } : f
           )
         );
-        simulateTransformations(newFile.id);
       } else {
         setFiles((prev) =>
           prev.map((f) => (f.id === newFile.id ? { ...f, progress } : f))
         );
       }
     }, 300);
+  };
+
+  const handleProcessFile = (fileId: string) => {
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId ? { ...f, status: "transforming" } : f
+      )
+    );
+    simulateTransformations(fileId);
   };
 
   const simulateTransformations = (fileId: string) => {
