@@ -12,45 +12,45 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    /* Dark theme (default for all) */
-    --background: 218 28% 7%; /* #0A0F1B - Very dark blue-grey */
-    --foreground: 0 0% 98%; /* #FAFAFA - Almost white */
+    /* Dark Schwab-inspired theme */
+    --background: 220 36% 7%; /* #080d17 */
+    --foreground: 214 32% 92%; /* #d5e2f7 */
 
-    --card: 217 27% 12%; /* #141B2D - Dark card background */
-    --card-foreground: 0 0% 98%;
+    --card: 220 34% 12%; /* #111a28 */
+    --card-foreground: 214 32% 92%;
 
-    --popover: 217 27% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 34% 15%;
+    --popover-foreground: 214 32% 92%;
 
-    --primary: 142 71% 45%; /* #10B981 - Emerald green (bullish) */
-    --primary-foreground: 0 0% 100%;
+    --primary: 187 86% 45%; /* #17d3da teal accent */
+    --primary-foreground: 0 0% 6%;
 
-    --secondary: 217 27% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 42 97% 57%; /* #f5b93a amber highlight */
+    --secondary-foreground: 0 0% 6%;
 
-    --muted: 217 27% 18%;
-    --muted-foreground: 216 14% 62%; /* #9CA3AF - Grey text */
+    --muted: 220 26% 20%;
+    --muted-foreground: 215 18% 64%;
 
-    --accent: 142 71% 45%; /* #10B981 - Green accent */
-    --accent-foreground: 0 0% 100%;
+    --accent: 187 86% 45%;
+    --accent-foreground: 0 0% 6%;
 
-    --destructive: 0 84% 60%; /* #EF4444 - Red (bearish) */
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 355 75% 51%; /* #e04955 */
+    --destructive-foreground: 210 40% 96%;
 
-    --border: 217 22% 22%; /* #233445 - Subtle borders */
-    --input: 217 22% 22%;
-    --ring: 142 71% 45%;
+    --border: 217 25% 22%; /* #23374a */
+    --input: 217 25% 22%;
+    --ring: 187 86% 45%;
 
-    --radius: 0.5rem;
+    --radius: 0.45rem;
 
-    --sidebar-background: 218 35% 5%; /* #050A15 - Darker sidebar */
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 142 71% 45%; /* Green for active items */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 27% 18%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 217 22% 22%;
-    --sidebar-ring: 142 71% 45%;
+    --sidebar-background: 218 40% 6%; /* #070b12 */
+    --sidebar-foreground: 214 32% 92%;
+    --sidebar-primary: 187 86% 45%;
+    --sidebar-primary-foreground: 0 0% 6%;
+    --sidebar-accent: 220 26% 18%;
+    --sidebar-accent-foreground: 214 32% 92%;
+    --sidebar-border: 217 25% 22%;
+    --sidebar-ring: 187 86% 45%;
   }
 
   /* No additional dark theme needed since root is already dark */
