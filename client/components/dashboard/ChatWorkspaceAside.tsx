@@ -41,7 +41,7 @@ export const ChatWorkspaceAside: React.FC = () => {
   }, [hint, isDeleting, idx, suggestions]);
 
   return (
-    <aside className="w-80 border-l border-border bg-card/50 flex flex-col overflow-hidden">
+    <aside className="w-80 border-l border-border bg-card/50 flex flex-col overflow-hidden sticky top-16 min-h-[calc(100vh-4rem)]">
       <div className="flex-1 overflow-auto p-4 flex flex-col justify-end">
         <div className="rounded-2xl border border-input bg-card shadow-lg">
           <div className="relative">
