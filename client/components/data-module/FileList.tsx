@@ -68,23 +68,29 @@ export const FileList: React.FC<FileListProps> = ({
     }).format(date);
   };
 
+  const getTypeIcon = () => fileType === "prices" ? "📊" : "📰";
+  const getTypeLabel = () => fileType === "prices" ? "Price Files" : "News Files";
+
   return (
     <div className="rounded-lg border border-border bg-card flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-border bg-card/50 sticky top-0">
-        <h2 className="font-semibold">Uploaded Files</h2>
+        <h2 className="font-semibold flex items-center gap-2">
+          <span>{getTypeIcon()}</span>
+          {getTypeLabel()}
+        </h2>
         <p className="text-xs text-muted-foreground">
-          {files.length} file{files.length !== 1 ? "s" : ""}
+          {filteredFiles.length} file{filteredFiles.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       <div className="flex-1 overflow-auto">
-        {files.length === 0 ? (
+        {filteredFiles.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
-            No files uploaded yet
+            No {fileType === "prices" ? "price" : "news"} files uploaded
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {files.map((file) => (
+            {filteredFiles.map((file) => (
               <button
                 key={file.id}
                 onClick={() => onSelectFile(file)}
