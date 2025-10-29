@@ -52,31 +52,35 @@ export const DataUpload: React.FC<DataUploadProps> = ({ onUpload }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <label className="text-sm font-semibold text-foreground block mb-2">Data Type</label>
+    <div className="space-y-5 rounded-3xl border border-border/40 bg-gradient-to-br from-[#141f32] via-[#0e1828] to-[#0a111d] p-6 shadow-inner">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <label className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">
+            Data Type
+          </label>
           <Select value={selectedType} onValueChange={(value) => setSelectedType(value as "prices" | "news")}>
-            <SelectTrigger className="w-48 bg-background">
-              <SelectValue />
+            <SelectTrigger className="w-48 rounded-full border border-border/40 bg-[#0c1624] text-xs uppercase tracking-[0.28em] text-muted-foreground/80">
+              <SelectValue placeholder="Select" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-card">
               <SelectItem value="prices" className="flex items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="size-4" />
+                <div className="flex items-center gap-2 text-sm">
+                  <BarChart3 className="size-4 text-primary" />
                   <span>Price Data</span>
                 </div>
               </SelectItem>
               <SelectItem value="news" className="flex items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <Newspaper className="size-4" />
+                <div className="flex items-center gap-2 text-sm">
+                  <Newspaper className="size-4 text-secondary" />
                   <span>News Feed</span>
                 </div>
               </SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-1" />
+        <p className="hidden text-[0.65rem] uppercase tracking-[0.26em] text-muted-foreground/60 md:block">
+          Drag & drop or browse to ingest datasets
+        </p>
       </div>
 
       <div
@@ -85,10 +89,8 @@ export const DataUpload: React.FC<DataUploadProps> = ({ onUpload }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer",
-          isDragOver
-            ? "border-primary bg-primary/5"
-            : "border-border hover:border-primary/50 hover:bg-accent/30"
+          "relative cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-border/40 bg-[linear-gradient(135deg,rgba(15,26,41,0.9),rgba(6,11,19,0.9))] px-6 py-12 text-center transition-all",
+          isDragOver ? "border-primary/70 shadow-[0_0_40px_rgba(23,211,218,0.25)]" : "hover:border-primary/40 hover:shadow-[0_0_30px_rgba(23,211,218,0.18)]",
         )}
       >
         <input
@@ -99,20 +101,20 @@ export const DataUpload: React.FC<DataUploadProps> = ({ onUpload }) => {
           onChange={handleFileSelect}
           className="hidden"
         />
-        <div className="flex flex-col items-center justify-center gap-3">
-          <div className={cn(
-            "p-3 rounded-lg transition-colors",
-            isDragOver ? "bg-primary/20" : "bg-accent/30"
-          )}>
-            <Upload className={cn("size-6", isDragOver ? "text-primary" : "text-muted-foreground")} />
+        <div className="flex flex-col items-center justify-center gap-4">
+          <div
+            className={cn(
+              "rounded-2xl border border-primary/40 p-4 transition-colors",
+              isDragOver ? "bg-primary/20" : "bg-primary/10",
+            )}
+          >
+            <Upload className={cn("size-7", isDragOver ? "text-primary" : "text-primary/80")} />
           </div>
-          <div className="text-center">
-            <p className="font-semibold">
-              {isDragOver ? "Drop files here" : "Drag & drop your data files"}
+          <div className="space-y-1 text-xs uppercase tracking-[0.28em] text-muted-foreground/80">
+            <p className="text-sm font-semibold text-foreground/85">
+              {isDragOver ? "Drop files to upload" : "Drag & drop your data files"}
             </p>
-            <p className="text-sm text-muted-foreground">
-              or click to browse (CSV, JSON, TXT)
-            </p>
+            <p>Or click to browse (CSV, JSON, TXT)</p>
           </div>
         </div>
       </div>
