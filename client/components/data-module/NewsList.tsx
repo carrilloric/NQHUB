@@ -64,11 +64,11 @@ export const NewsList: React.FC<NewsListProps> = ({
   return (
     <div className="rounded-lg border border-border bg-card flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-border bg-card/50 sticky top-0">
-        <h2 className="font-semibold flex items-center gap-2">
-          <span>📰</span>
-          News Files
-        </h2>
-        <p className="text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 mb-1">
+          <Newspaper className="size-4 text-primary" />
+          <h2 className="font-semibold">News Files</h2>
+        </div>
+        <p className="text-xs text-muted-foreground ml-6">
           {newsFiles.length} file{newsFiles.length !== 1 ? "s" : ""}
         </p>
       </div>
