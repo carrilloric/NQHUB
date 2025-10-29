@@ -14,49 +14,63 @@ export const TopNavbar: React.FC = () => {
   const changeLang = () => ui.setLanguage(ui.language === "en" ? "es" : "en");
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-sidebar text-sidebar-foreground z-40">
-      <div className="h-full flex items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-[#121a2b] via-[#0d141f] to-[#121a2b] text-foreground/95 shadow-[0_2px_18px_rgba(0,0,0,0.55)] border-b border-primary/40 z-40">
+      <div className="h-full flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <div className="text-xl font-extrabold tracking-tight"><span className="text-primary">NQ</span>HUB</div>
-          <span className="hidden md:inline-block text-sm text-muted-foreground">{user ? t("dashboard.title") : t("auth.login")}</span>
+          <div className="flex items-baseline gap-1 text-2xl font-black tracking-[0.32em] uppercase text-foreground">
+            <span className="text-secondary">NQ</span>
+            <span>Hub</span>
+          </div>
+          <span className="hidden lg:inline-block text-xs font-medium uppercase tracking-[0.32em] text-muted-foreground/80">
+            {user ? t("dashboard.title") : t("auth.login")}
+          </span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center">
+        <div className="hidden md:flex flex-1 items-center justify-center">
           <Ticker />
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Toggle LLM" onClick={() => ui.setLlmPanelOpen(!ui.llmPanelOpen)}>
-            <Globe className="size-5" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Toggle Theme" onClick={toggleTheme}>
-            {ui.theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Change Language" onClick={changeLang}>
-            <Languages className="size-5" />
-          </Button>
+          <ToolbarIcon onClick={() => ui.setLlmPanelOpen(!ui.llmPanelOpen)} aria-label="Toggle LLM">
+            <Globe className="size-4" />
+          </ToolbarIcon>
+          <ToolbarIcon onClick={toggleTheme} aria-label="Toggle Theme">
+            {ui.theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </ToolbarIcon>
+          <ToolbarIcon onClick={changeLang} aria-label="Change Language">
+            <Languages className="size-4" />
+          </ToolbarIcon>
           <div className="relative">
-            <Button variant="ghost" size="icon" aria-label="Notifications">
-              <Bell className="size-5" />
-            </Button>
+            <ToolbarIcon aria-label="Notifications">
+              <Bell className="size-4" />
+            </ToolbarIcon>
             {user?.role === "admin" && ui.pendingRequests > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded">{ui.pendingRequests}</span>
+              <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                {ui.pendingRequests}
+              </span>
             )}
           </div>
           {user && (
-            <div className="flex items-center pl-2 ml-2 border-l border-border/60">
-              <User className="mr-2 size-5 text-muted-foreground" />
-              <div className="mr-2 text-sm">
-                <div className="leading-4 font-medium">{user.firstName || user.email}</div>
-                <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
+            <div className="hidden md:flex items-center pl-3 ml-3 border-l border-border/40">
+              <div className="flex flex-col mr-3">
+                <span className="text-sm font-semibold leading-5">{user.firstName || user.email}</span>
+                <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{user.role}</span>
               </div>
-              <ChevronDown className="size-4 text-muted-foreground" />
-              <Button variant="ghost" className="ml-2" size="sm" onClick={logout}>
-                <LogOut className="size-4 mr-1" /> {t("auth.logout")}
-              </Button>
-              <Button variant="ghost" size="icon" className="ml-1" aria-label="Settings">
-                <Settings className="size-5" />
-              </Button>
+              <ToolbarIcon asChild aria-label="User Menu">
+                <button className="flex items-center gap-1">
+                  <User className="size-4" />
+                  <ChevronDown className="size-4" />
+                </button>
+              </ToolbarIcon>
+              <ToolbarIcon asChild className="ml-1" aria-label="Logout" onClick={logout}>
+                <button className="flex items-center gap-1 text-sm font-semibold">
+                  <LogOut className="size-4" />
+                  {t("auth.logout")}
+                </button>
+              </ToolbarIcon>
+              <ToolbarIcon className="ml-1" aria-label="Settings">
+                <Settings className="size-4" />
+              </ToolbarIcon>
             </div>
           )}
         </div>
@@ -67,12 +81,16 @@ export const TopNavbar: React.FC = () => {
 
 const Ticker: React.FC = () => {
   return (
-    <div className={cn("px-3 py-1 rounded-md border border-border/60 bg-card text-card-foreground text-sm flex items-center gap-3")}> 
-      <span className="font-semibold">NQ</span>
-      <span className="tabular-nums">15,234.12</span>
-      <span className="text-green-400">+0.85%</span>
-      <div className="ml-3 h-1 w-20 bg-muted rounded overflow-hidden">
-        <div className="h-full w-1/2 bg-primary animate-pulse"></div>
+    <div
+      className={cn(
+        "flex items-center gap-4 rounded-full border border-primary/40 bg-gradient-to-r from-[#0b141f] to-[#0e1b28] px-5 py-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground/80 shadow-[0_0_24px_rgba(0,171,196,0.12)]",
+      )}
+    >
+      <span className="text-secondary text-sm font-bold tracking-[0.26em]">NQ</span>
+      <span className="tabular-nums text-base font-semibold text-foreground">15,234.12</span>
+      <span className="text-bullish tabular-nums font-semibold">+0.85%</span>
+      <div className="ml-2 flex h-2 w-24 items-center overflow-hidden rounded-full bg-muted/60">
+        <div className="h-full w-1/2 bg-primary/70 animate-[pulse_1.8s_ease-in-out_infinite]"></div>
       </div>
     </div>
   );
