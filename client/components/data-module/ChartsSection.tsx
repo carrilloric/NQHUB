@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, TrendingUp } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -10,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 
 export const ChartsSection: React.FC = () => {
-  const [selectedAsset, setSelectedAsset] = useState<string>("AAPL");
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>("1h");
   const [startDate, setStartDate] = useState<string>(
     new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -18,17 +17,6 @@ export const ChartsSection: React.FC = () => {
   const [endDate, setEndDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-
-  const assets = [
-    "AAPL",
-    "GOOGL",
-    "MSFT",
-    "TSLA",
-    "AMZN",
-    "META",
-    "NVDA",
-    "NFLX",
-  ];
 
   const timeframes = [
     { value: "30s", label: "30 seconds" },
