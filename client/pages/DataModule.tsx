@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DataIngestETLSection } from "@/components/data-module/DataIngestETLSection";
 import { ChartsSection } from "@/components/data-module/ChartsSection";
