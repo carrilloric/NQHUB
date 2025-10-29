@@ -19,18 +19,18 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className={cn("fixed left-0 top-16 bottom-0 border-r border-border/60 bg-sidebar text-sidebar-foreground z-30 transition-all", ui.sidebarCollapsed ? "w-14" : "w-60")}> 
+    <aside className={cn("fixed left-0 top-16 bottom-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground z-30 transition-all duration-300", ui.sidebarCollapsed ? "w-14" : "w-60")}>
       <div className="h-full flex flex-col">
-        <nav className="py-3">
+        <nav className="py-2 space-y-1 px-2">
           {items.filter(i => i.visible).map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-sidebar-accent", isActive && "bg-sidebar-accent") }>
-              <Icon className="size-5" />
+            <NavLink key={to} to={to} className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2.5 text-sm rounded-md transition-colors", isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "hover:bg-sidebar-accent text-sidebar-foreground") }>
+              <Icon className="size-5 flex-shrink-0" />
               {!ui.sidebarCollapsed && <span className="truncate">{label}</span>}
             </NavLink>
           ))}
           {user?.role === "admin" && (
-            <NavLink to="/admin/users" className={({ isActive }) => cn("mt-2 flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-sidebar-accent", isActive && "bg-sidebar-accent")}>
-              <LayoutDashboard className="size-5" />
+            <NavLink to="/admin/users" className={({ isActive }) => cn("mt-2 flex items-center gap-3 px-3 py-2.5 text-sm rounded-md transition-colors", isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "hover:bg-sidebar-accent text-sidebar-foreground")}>
+              <LayoutDashboard className="size-5 flex-shrink-0" />
               {!ui.sidebarCollapsed && <span>{t("nav.userManagement")}</span>}
             </NavLink>
           )}
