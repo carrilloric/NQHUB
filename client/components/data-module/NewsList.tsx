@@ -62,52 +62,52 @@ export const NewsList: React.FC<NewsListProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card flex flex-col h-full overflow-hidden">
-      <div className="p-4 border-b border-border bg-card/50 sticky top-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Newspaper className="size-4 text-primary" />
-          <h2 className="font-semibold">News Files</h2>
+    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br from-[#131d30] to-[#0b141f] shadow-inner">
+      <div className="sticky top-0 border-b border-border/40 bg-[#101a2b]/80 px-4 py-4">
+        <div className="mb-1 flex items-center gap-2">
+          <Newspaper className="size-4 text-secondary" />
+          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-foreground/85">News Files</h2>
         </div>
-        <p className="text-xs text-muted-foreground ml-6">
+        <p className="ml-6 text-[0.65rem] uppercase tracking-[0.24em] text-muted-foreground/70">
           {newsFiles.length} file{newsFiles.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       <div className="flex-1 overflow-auto">
         {newsFiles.length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground/70">
             No news files uploaded
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/30">
             {newsFiles.map((file) => (
               <button
                 key={file.id}
                 onClick={() => onSelectFile(file)}
                 className={cn(
-                  "w-full text-left p-3 transition-colors hover:bg-accent/50",
-                  selectedFile?.id === file.id && "bg-accent"
+                  "w-full px-4 py-4 text-left transition-all hover:bg-secondary/15",
+                  selectedFile?.id === file.id ? "bg-secondary/20 border-l-2 border-secondary" : "border-l-2 border-transparent",
                 )}
               >
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-center gap-2">
                       {getStatusIcon(file.status)}
-                      <p className="font-medium text-sm truncate">{file.name}</p>
+                      <p className="truncate text-sm font-semibold tracking-wide text-foreground/90">{file.name}</p>
                     </div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="text-xs text-muted-foreground">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[0.68rem] uppercase tracking-[0.22em] text-muted-foreground/70">
+                      <span>
                         {formatFileSize(file.size)} • {formatTime(file.uploadedAt)}
-                      </p>
-                      <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded">
+                      </span>
+                      <span className="rounded-full border border-secondary/40 bg-secondary/15 px-3 py-1 text-secondary">
                         {getStatusLabel(file.status)}
                       </span>
                     </div>
 
                     {file.status === "uploading" && (
-                      <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#111f33]">
                         <div
-                          className="h-full bg-primary transition-all duration-300"
+                          className="h-full bg-secondary transition-all duration-300"
                           style={{ width: `${file.progress}%` }}
                         />
                       </div>
@@ -118,7 +118,7 @@ export const NewsList: React.FC<NewsListProps> = ({
                       e.stopPropagation();
                       onDeleteFile(file.id);
                     }}
-                    className="text-muted-foreground hover:text-foreground transition-colors mt-1"
+                    className="mt-1 text-muted-foreground/70 transition-colors hover:text-bearish"
                   >
                     <Trash2 className="size-4" />
                   </button>
