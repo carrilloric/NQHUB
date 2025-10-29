@@ -28,7 +28,9 @@ interface DataModuleProps {
   defaultTab?: DataModuleTab;
 }
 
-export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" }) => {
+export const DataModule: React.FC<DataModuleProps> = ({
+  defaultTab = "ingest",
+}) => {
   const { t } = useI18n();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
@@ -47,16 +49,19 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
       progress: 0,
       type,
       status: "uploading",
-      transformations: type === "prices" ? [
-        { timeframe: "30s", status: "pending" },
-        { timeframe: "1m", status: "pending" },
-        { timeframe: "5m", status: "pending" },
-        { timeframe: "15m", status: "pending" },
-        { timeframe: "1h", status: "pending" },
-        { timeframe: "4h", status: "pending" },
-        { timeframe: "1d", status: "pending" },
-        { timeframe: "1w", status: "pending" },
-      ] : undefined,
+      transformations:
+        type === "prices"
+          ? [
+              { timeframe: "30s", status: "pending" },
+              { timeframe: "1m", status: "pending" },
+              { timeframe: "5m", status: "pending" },
+              { timeframe: "15m", status: "pending" },
+              { timeframe: "1h", status: "pending" },
+              { timeframe: "4h", status: "pending" },
+              { timeframe: "1d", status: "pending" },
+              { timeframe: "1w", status: "pending" },
+            ]
+          : undefined,
     };
 
     setFiles((prev) => [newFile, ...prev]);
@@ -70,12 +75,12 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
         clearInterval(uploadInterval);
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === newFile.id ? { ...f, progress: 100, status: "ready" } : f
-          )
+            f.id === newFile.id ? { ...f, progress: 100, status: "ready" } : f,
+          ),
         );
       } else {
         setFiles((prev) =>
-          prev.map((f) => (f.id === newFile.id ? { ...f, progress } : f))
+          prev.map((f) => (f.id === newFile.id ? { ...f, progress } : f)),
         );
       }
     }, 300);
@@ -83,9 +88,7 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
 
   const handleProcessFile = (fileId: string) => {
     setFiles((prev) =>
-      prev.map((f) =>
-        f.id === fileId ? { ...f, status: "transforming" } : f
-      )
+      prev.map((f) => (f.id === fileId ? { ...f, status: "transforming" } : f)),
     );
     simulateTransformations(fileId);
   };
@@ -101,34 +104,46 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
             f.id === fileId
               ? {
                   ...f,
-                  transformations: f.transformations?.map((t) =>
-                    t.timeframe === timeframe
-                      ? { ...t, status: "processing" as const }
-                      : t
-                  ) || [],
+                  transformations:
+                    f.transformations?.map((t) =>
+                      t.timeframe === timeframe
+                        ? { ...t, status: "processing" as const }
+                        : t,
+                    ) || [],
                 }
-              : f
-          )
+              : f,
+          ),
         );
 
-        setTimeout(() => {
-          completedCount++;
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileId
-                ? {
-                    ...f,
-                    transformations: f.transformations?.map((t) =>
-                      t.timeframe === timeframe
-                        ? { ...t, status: "completed" as const, completedAt: new Date() }
-                        : t
-                    ) || [],
-                    status: completedCount === timeframes.length ? "completed" : "transforming",
-                  }
-                : f
-            )
-          );
-        }, 1000 + Math.random() * 1000);
+        setTimeout(
+          () => {
+            completedCount++;
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId
+                  ? {
+                      ...f,
+                      transformations:
+                        f.transformations?.map((t) =>
+                          t.timeframe === timeframe
+                            ? {
+                                ...t,
+                                status: "completed" as const,
+                                completedAt: new Date(),
+                              }
+                            : t,
+                        ) || [],
+                      status:
+                        completedCount === timeframes.length
+                          ? "completed"
+                          : "transforming",
+                    }
+                  : f,
+              ),
+            );
+          },
+          1000 + Math.random() * 1000,
+        );
       }, index * 800);
     });
   };
@@ -148,22 +163,36 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
           <div className="flex-1 overflow-auto px-4 py-8 md:px-10">
             <div className="flex flex-col gap-6">
               <div className="space-y-3">
-                <h1 className="text-5xl font-extrabold tracking-tight text-foreground">Data Module</h1>
+                <h1 className="text-5xl font-extrabold tracking-tight text-foreground">
+                  Data Module
+                </h1>
                 <p className="text-sm text-muted-foreground/80">
-                  Upload and analyze NQ datasets across pipelines and chart views
+                  Upload and analyze NQ datasets across pipelines and chart
+                  views
                 </p>
               </div>
 
               <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-[#121b2d] via-[#0b1523] to-[#090f19] shadow-[0_24px_48px_rgba(0,0,0,0.55)]">
-                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DataModuleTab)} className="flex h-full flex-col">
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(value) =>
+                    setActiveTab(value as DataModuleTab)
+                  }
+                  className="flex h-full flex-col"
+                >
                   <TabsList className="grid w-full grid-cols-3 px-4">
-                    <TabsTrigger value="ingest">🧪 Data Ingest & ETL</TabsTrigger>
+                    <TabsTrigger value="ingest">
+                      🧪 Data Ingest & ETL
+                    </TabsTrigger>
                     <TabsTrigger value="charts">📊 Charts</TabsTrigger>
                     <TabsTrigger value="analysis">📈 Data Analysis</TabsTrigger>
                   </TabsList>
 
                   <div className="flex-1 overflow-hidden">
-                    <TabsContent value="ingest" className="flex h-full flex-col overflow-hidden px-6 pb-8 pt-6">
+                    <TabsContent
+                      value="ingest"
+                      className="flex h-full flex-col overflow-hidden px-6 pb-8 pt-6"
+                    >
                       <DataIngestETLSection
                         files={files}
                         selectedFile={selectedFile}
@@ -174,11 +203,17 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
                       />
                     </TabsContent>
 
-                    <TabsContent value="charts" className="flex h-full flex-col overflow-hidden px-0 pb-0 pt-4">
+                    <TabsContent
+                      value="charts"
+                      className="flex h-full flex-col overflow-hidden px-0 pb-0 pt-4"
+                    >
                       <ChartsSection />
                     </TabsContent>
 
-                    <TabsContent value="analysis" className="flex h-full flex-col overflow-auto px-6 pb-8 pt-6">
+                    <TabsContent
+                      value="analysis"
+                      className="flex h-full flex-col overflow-auto px-6 pb-8 pt-6"
+                    >
                       <DataAnalysisSection />
                     </TabsContent>
                   </div>

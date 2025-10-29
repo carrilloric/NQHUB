@@ -15,13 +15,25 @@ export const ChatWorkspaceAside: React.FC = () => {
 
   useEffect(() => {
     const full = suggestions[idx];
-    const typingDelay = Math.max(28, Math.floor(3000 / Math.max(full.length, 1)));
-    const deletingDelay = Math.max(18, Math.floor(1600 / Math.max(full.length, 1)));
+    const typingDelay = Math.max(
+      28,
+      Math.floor(3000 / Math.max(full.length, 1)),
+    );
+    const deletingDelay = Math.max(
+      18,
+      Math.floor(1600 / Math.max(full.length, 1)),
+    );
 
     const atEnd = hint === full && !isDeleting;
     const atStart = hint === "" && isDeleting;
 
-    const delay = atEnd ? 1200 : atStart ? 450 : isDeleting ? deletingDelay : typingDelay;
+    const delay = atEnd
+      ? 1200
+      : atStart
+        ? 450
+        : isDeleting
+          ? deletingDelay
+          : typingDelay;
 
     const t = setTimeout(() => {
       if (atEnd) {
@@ -33,7 +45,9 @@ export const ChatWorkspaceAside: React.FC = () => {
         setIdx((i) => (i + 1) % suggestions.length);
         return;
       }
-      const next = isDeleting ? full.slice(0, hint.length - 1) : full.slice(0, hint.length + 1);
+      const next = isDeleting
+        ? full.slice(0, hint.length - 1)
+        : full.slice(0, hint.length + 1);
       setHint(next);
     }, delay);
 
@@ -52,11 +66,14 @@ export const ChatWorkspaceAside: React.FC = () => {
               placeholder=""
               className={cn(
                 "w-full resize-none bg-transparent outline-none px-4 py-4 text-sm",
-                "placeholder:text-muted-foreground"
+                "placeholder:text-muted-foreground",
               )}
             />
             {value.length === 0 && (
-              <div aria-hidden className="pointer-events-none absolute left-4 top-3 text-sm text-muted-foreground">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-4 top-3 text-sm text-muted-foreground"
+              >
                 {hint}
                 <span className="ml-0.5 opacity-40">|</span>
               </div>
@@ -91,16 +108,18 @@ export const ChatWorkspaceAside: React.FC = () => {
   );
 };
 
-const IconChip: React.FC<{ title?: string; active?: boolean; children: React.ReactNode }> = ({
-  title,
-  active,
-  children,
-}) => (
+const IconChip: React.FC<{
+  title?: string;
+  active?: boolean;
+  children: React.ReactNode;
+}> = ({ title, active, children }) => (
   <span
     title={title}
     className={cn(
       "inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
-      active ? "bg-secondary border-input" : "border-transparent hover:bg-secondary"
+      active
+        ? "bg-secondary border-input"
+        : "border-transparent hover:bg-secondary",
     )}
   >
     {children}
