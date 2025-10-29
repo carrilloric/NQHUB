@@ -69,6 +69,9 @@
   "nav": {
     "dashboard": "Dashboard",
     "dataModule": "Data Module",
+    "dataIngest": "Data Ingest & ETL",
+    "dataCharts": "Charts",
+    "dataAnalysis": "Data Analysis",
     "backtesting": "Backtesting",
     "botModule": "BOT Module",
     "settings": "Settings",
