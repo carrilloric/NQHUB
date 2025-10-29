@@ -143,7 +143,7 @@ export const FileList: React.FC<FileListProps> = ({
                       </div>
                     )}
 
-                    {file.status === "ready" && (
+                    {file.status === "ready" && fileType === "prices" && (
                       <div className="mt-3 flex gap-2">
                         <Button
                           size="sm"
