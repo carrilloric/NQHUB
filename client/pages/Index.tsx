@@ -78,8 +78,15 @@ export default function Index() {
               Demo: Use emails like <code className="bg-muted px-1.5 py-0.5 rounded">admin@</code>, <code className="bg-muted px-1.5 py-0.5 rounded">trader@</code>, or <code className="bg-muted px-1.5 py-0.5 rounded">senior@</code>
             </p>
           </form>
-          <footer className="mt-6 text-center text-xs text-muted-foreground">
-            <a href="#" className="hover:underline">Terms</a> • <a href="#" className="hover:underline">Privacy</a> • <a href="#" className="hover:underline">Contact</a>
+          <footer className="mt-8 pt-6 border-t border-border/30 text-center text-xs text-muted-foreground space-y-2">
+            <div className="flex items-center justify-center gap-4">
+              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+              <span className="text-border/60">•</span>
+              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+              <span className="text-border/60">•</span>
+              <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+            </div>
+            <p>© 2024 NQHUB. All rights reserved.</p>
           </footer>
         </div>
       </div>
