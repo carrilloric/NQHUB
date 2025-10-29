@@ -37,19 +37,17 @@ export const ChartsSection: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-      <div className="rounded-lg border border-border bg-card p-6">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="size-5 text-primary" />
-            <h2 className="font-semibold text-lg">Chart Analysis</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">NQ Futures - Price Data Visualization</p>
+      {/* Controls */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="size-5 text-primary" />
+          <h2 className="font-semibold">NQ Futures Analysis</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-foreground">Timeframe</label>
-            <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
+            <Select value={selectedTimeframe} onValueChange={(value) => setTimeframe(value as any)}>
               <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
@@ -89,33 +87,55 @@ export const ChartsSection: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="rounded-lg border border-border bg-card flex-1 flex flex-col overflow-hidden">
-        <div className="p-6 border-b border-border">
-          <h3 className="font-semibold">NQ Futures - {selectedTimeframe} Chart</h3>
-          <div className="flex gap-4 mt-3 text-sm">
-            <div>
-              <p className="text-muted-foreground">Timeframe</p>
-              <p className="font-semibold text-foreground">{selectedTimeframe}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Period</p>
-              <p className="font-semibold text-foreground">{startDate} to {endDate}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-full h-full bg-gradient-to-br from-accent/10 to-accent/5 rounded-lg border border-dashed border-border/50 flex flex-col items-center justify-center gap-3">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <TrendingUp className="size-6" />
-              <p className="text-sm font-medium">Chart visualization area</p>
-            </div>
-            <p className="text-xs text-muted-foreground">Processed price data from database will be rendered here</p>
-          </div>
+        <div className="flex gap-4 text-sm">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showVolumeProfile}
+              onChange={(e) => setShowVolumeProfile(e.target.checked)}
+              className="rounded border border-border"
+            />
+            <span>Volume Profile</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showDeltaProfile}
+              onChange={(e) => setShowDeltaProfile(e.target.checked)}
+              className="rounded border border-border"
+            />
+            <span>Delta Profile</span>
+          </label>
         </div>
       </div>
+
+      {/* Charts and Indicators */}
+      <Tabs defaultValue="charts" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="charts">Charts</TabsTrigger>
+          <TabsTrigger value="indicators" className="flex items-center gap-2">
+            <Zap className="size-4" />
+            Indicators
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="charts" className="flex-1 overflow-hidden">
+          <MultiChartView />
+        </TabsContent>
+
+        <TabsContent value="indicators" className="flex-1 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanel defaultSize={50} minSize={30}>
+              <IndicatorLibrary />
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={50} minSize={30}>
+              <ActiveIndicatorsList />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
