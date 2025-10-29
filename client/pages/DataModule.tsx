@@ -13,7 +13,7 @@ export interface UploadedFile {
   size: number;
   uploadedAt: Date;
   progress: number;
-  status: "uploading" | "transforming" | "completed" | "error";
+  status: "uploading" | "ready" | "transforming" | "completed" | "error";
   transformations?: {
     timeframe: string;
     status: "pending" | "processing" | "completed";
