@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DataUpload } from "@/components/data-module/DataUpload";
 import { FileList } from "@/components/data-module/FileList";
+import { NewsList } from "@/components/data-module/NewsList";
 import { ChartArea } from "@/components/data-module/ChartArea";
 import { TimeframeSelector } from "@/components/data-module/TimeframeSelector";
 import { ChatWorkspaceAside } from "@/components/dashboard/ChatWorkspaceAside";
