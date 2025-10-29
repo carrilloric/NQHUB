@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { OHLCVCandle, FootprintCandle, generateMockOHLCVData, generateMockFootprintData } from "@/shared/mock-data";
+import { OHLCVCandle, FootprintCandle, generateMockOHLCVData, generateMockFootprintData } from "@shared/mock-data";
 
 // ==================== TYPES ====================
 export type ChartType = "candlestick" | "footprint";

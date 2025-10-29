@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { RefreshCw, CheckCircle2, AlertCircle, Loader, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getMockETLStatus, getMockDataSources, getMockETLJobs, type ETLStatus, type DataSource, type ETLJob } from "@/shared/mock-data";
+import { getMockETLStatus, getMockDataSources, getMockETLJobs, type ETLStatus, type DataSource, type ETLJob } from "@shared/mock-data";
 
 export const ETLDashboard: React.FC = () => {
   const [status, setStatus] = useState<ETLStatus | null>(null);
