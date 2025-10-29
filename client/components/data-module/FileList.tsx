@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2, CheckCircle2, AlertCircle, Loader, Play } from "lucide-react";
+import { Trash2, CheckCircle2, AlertCircle, Loader, Play, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { UploadedFile } from "@/pages/DataModule";
