@@ -8,7 +8,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar />
-      <main className="pl-14 md:pl-60 p-0">
+      <main className="pl-14 md:pl-60 p-0 flex flex-col">
         <ChatWorkspace title={t("dashboard.title")} />
       </main>
     </div>
