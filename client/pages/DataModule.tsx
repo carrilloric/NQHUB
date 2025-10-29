@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DataIngestETLSection } from "@/components/data-module/DataIngestETLSection";
 import { ChartsSection } from "@/components/data-module/ChartsSection";
@@ -6,6 +7,8 @@ import { DataAnalysisSection } from "@/components/data-module/DataAnalysisSectio
 import { ChatWorkspaceAside } from "@/components/dashboard/ChatWorkspaceAside";
 import { useI18n } from "@/state/app";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type DataModuleTab = "ingest" | "charts" | "analysis";
 
 export interface UploadedFile {
   id: string;
@@ -22,10 +25,19 @@ export interface UploadedFile {
   }[];
 }
 
-export const DataModule: React.FC = () => {
+interface DataModuleProps {
+  defaultTab?: DataModuleTab;
+}
+
+export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" }) => {
   const { t } = useI18n();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
+  const [activeTab, setActiveTab] = useState<DataModuleTab>(defaultTab);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   const handleFileUpload = (file: File, type: "prices" | "news") => {
     const newFile: UploadedFile = {
@@ -144,7 +156,7 @@ export const DataModule: React.FC = () => {
               </div>
 
               <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-[#121b2d] via-[#0b1523] to-[#090f19] shadow-[0_24px_48px_rgba(0,0,0,0.55)]">
-                <Tabs defaultValue="ingest" className="flex h-full flex-col">
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DataModuleTab)} className="flex h-full flex-col">
                   <TabsList className="grid w-full grid-cols-3 px-4">
                     <TabsTrigger value="ingest">🧪 Data Ingest & ETL</TabsTrigger>
                     <TabsTrigger value="charts">📊 Charts</TabsTrigger>
