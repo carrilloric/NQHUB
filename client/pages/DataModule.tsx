@@ -147,7 +147,7 @@ export const DataModule: React.FC = () => {
                 <TimeframeSelector selectedTimeframe={selectedTimeframe} onTimeframeChange={setSelectedTimeframe} />
               </div>
               <div className="overflow-hidden">
-                <FileList files={files} selectedFile={selectedFile} onSelectFile={setSelectedFile} onDeleteFile={handleDeleteFile} />
+                <FileList files={files} selectedFile={selectedFile} onSelectFile={setSelectedFile} onDeleteFile={handleDeleteFile} onProcessFile={handleProcessFile} />
               </div>
             </div>
           </div>
