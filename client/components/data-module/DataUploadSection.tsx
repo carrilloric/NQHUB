@@ -3,6 +3,7 @@ import { Upload, Newspaper } from "lucide-react";
 import { DataUpload } from "./DataUpload";
 import { FileList } from "./FileList";
 import { NewsList } from "./NewsList";
+import { cn } from "@/lib/utils";
 import type { UploadedFile } from "@/pages/DataModule";
 
 interface DataUploadSectionProps {
