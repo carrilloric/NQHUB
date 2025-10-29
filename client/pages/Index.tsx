@@ -43,31 +43,39 @@ export default function Index() {
             <div className="text-4xl font-extrabold tracking-tighter"><span className="text-primary">NQ</span>HUB</div>
             <p className="text-sm text-muted-foreground">Professional Trading Platform</p>
           </div>
-          <form onSubmit={onSubmit} className="bg-card border border-border/40 rounded-lg p-6 shadow-lg space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">{t("auth.email")}</Label>
-                <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div>
-                <Label htmlFor="password">{t("auth.password")}</Label>
-                <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm select-none">
-                  <input type="checkbox" className="accent-primary" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-                  {t("auth.rememberMe")}
-                </label>
-                <Link to="/auth/forgot-password" className="text-sm text-primary hover:underline">{t("auth.forgotPassword")}</Link>
-              </div>
-              {error && <div className="text-sm text-destructive">{error}</div>}
-              <Button type="submit" className="w-full" disabled={loading}>{loading ? "Signing in..." : t("auth.login")}</Button>
+          <form onSubmit={onSubmit} className="bg-card border border-border/40 rounded-lg p-6 shadow-lg space-y-5">
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
+              <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required className="mt-1.5" />
             </div>
-            <div className="mt-4 text-center">
-              <Link to="/auth/request-access" className="text-sm text-muted-foreground hover:text-foreground underline">{t("auth.requestAccess")}</Link>
+            <div>
+              <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
+              <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} className="mt-1.5" />
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Tip: use an email like admin@ to login as admin, or trader@ / senior@ / junior@ for other roles.
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm select-none cursor-pointer">
+                <input type="checkbox" className="accent-primary cursor-pointer" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                <span>{t("auth.rememberMe")}</span>
+              </label>
+              <Link to="/auth/forgot-password" className="text-sm text-primary hover:text-primary/80 transition-colors">{t("auth.forgotPassword")}</Link>
+            </div>
+            {error && <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded px-3 py-2">{error}</div>}
+            <Button type="submit" className="w-full h-10 font-medium" disabled={loading}>{loading ? "Signing in..." : t("auth.login")}</Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/30"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-card text-muted-foreground">or</span>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <Link to="/auth/request-access" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t("auth.requestAccess")}</Link>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Demo: Use emails like <code className="bg-muted px-1.5 py-0.5 rounded">admin@</code>, <code className="bg-muted px-1.5 py-0.5 rounded">trader@</code>, or <code className="bg-muted px-1.5 py-0.5 rounded">senior@</code>
             </p>
           </form>
           <footer className="mt-6 text-center text-xs text-muted-foreground">
