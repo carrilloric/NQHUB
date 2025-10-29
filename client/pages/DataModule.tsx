@@ -143,8 +143,8 @@ export const DataModule: React.FC<DataModuleProps> = ({ defaultTab = "ingest" })
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar />
-      <main className="pl-16 md:pl-64 flex bg-[radial-gradient(circle_at_top_left,_rgba(23,211,218,0.12),_transparent)]">
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <main className="pl-16 md:pl-64 flex min-h-screen items-start bg-[radial-gradient(circle_at_top_left,_rgba(23,211,218,0.12),_transparent)]">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 overflow-auto px-4 py-8 md:px-10">
             <div className="flex flex-col gap-6">
               <div className="space-y-3">
