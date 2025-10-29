@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth, useI18n, useUI } from "@/state/app";
-import { Bot, FlaskConical, HelpCircle, Home, LayoutDashboard, Settings as Cog, TrendingUp } from "lucide-react";
+import { Bot, FlaskConical, HelpCircle, Home, LayoutDashboard, LineChart, Settings as Cog, Sigma, TrendingUp } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +11,9 @@ export const Sidebar: React.FC = () => {
 
   const items = [
     { to: "/dashboard", icon: Home, label: t("nav.dashboard"), visible: true },
-    { to: "/data", icon: TrendingUp, label: t("nav.dataModule"), visible: true },
+    { to: "/data", icon: TrendingUp, label: t("nav.dataIngest"), visible: true },
+    { to: "/data/charts", icon: LineChart, label: t("nav.dataCharts"), visible: true },
+    { to: "/data/analysis", icon: Sigma, label: t("nav.dataAnalysis"), visible: true },
     { to: "/backtesting", icon: FlaskConical, label: t("nav.backtesting"), visible: user?.role !== "admin" ? true : true },
     { to: "/bot", icon: Bot, label: t("nav.botModule"), visible: user?.role === "trader" || user?.role === "admin" },
     { to: "/settings", icon: Cog, label: t("nav.settings"), visible: true },
