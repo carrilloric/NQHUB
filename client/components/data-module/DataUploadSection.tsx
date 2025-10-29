@@ -1,4 +1,5 @@
 import React from "react";
+import { Upload, Newspaper } from "lucide-react";
 import { DataUpload } from "./DataUpload";
 import { FileList } from "./FileList";
 import { NewsList } from "./NewsList";
