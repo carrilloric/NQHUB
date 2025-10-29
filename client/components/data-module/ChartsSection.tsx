@@ -105,7 +105,7 @@ export const ChartsSection: React.FC = () => {
               type="checkbox"
               checked={showDeltaProfile}
               onChange={(e) => setShowDeltaProfile(e.target.checked)}
-              className="size-4 rounded border border-border/60 bg-[#0c1624] text-secondary focus:ring-secondary"
+              className="size-4 rounded border border-border/60 bg-[#0c1624] accent-secondary"
             />
             <span>Delta Profile</span>
           </label>
