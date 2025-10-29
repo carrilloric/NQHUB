@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2, CheckCircle2, AlertCircle, Loader } from "lucide-react";
+import { Trash2, CheckCircle2, AlertCircle, Loader, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UploadedFile } from "@/pages/DataModule";
 
