@@ -36,57 +36,116 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="flex-1 grid place-items-center p-6">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8 space-y-2">
-            <div className="text-4xl font-extrabold tracking-tighter"><span className="text-primary">NQ</span>HUB</div>
-            <p className="text-sm text-muted-foreground">Professional Trading Platform</p>
+    <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(23,211,218,0.18),_transparent)] text-foreground">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,rgba(8,13,23,0.95),rgba(5,9,16,0.92))]" aria-hidden />
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-16">
+        <div className="w-full max-w-md space-y-10">
+          <div className="space-y-3 text-center">
+            <div className="text-4xl font-black uppercase tracking-[0.4em] text-foreground/95">
+              <span className="text-secondary">NQ</span>HUB
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-muted-foreground/70">
+              Professional Trading Platform
+            </p>
           </div>
-          <form onSubmit={onSubmit} className="bg-card border border-border/40 rounded-lg p-6 shadow-lg space-y-5">
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
-              <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required className="mt-1.5" />
+          <form
+            onSubmit={onSubmit}
+            className="space-y-6 rounded-3xl border border-border/40 bg-gradient-to-br from-[#131f32] via-[#0e1827] to-[#0a111d] p-8 shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.26em] text-muted-foreground/70">
+                  {t("auth.email")}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  className="rounded-full border border-border/40 bg-[#0c1624] px-4 py-3 text-sm text-muted-foreground/80 focus-visible:ring-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.26em] text-muted-foreground/70">
+                  {t("auth.password")}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={8}
+                  className="rounded-full border border-border/40 bg-[#0c1624] px-4 py-3 text-sm text-muted-foreground/80 focus-visible:ring-primary"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
-              <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} className="mt-1.5" />
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm select-none cursor-pointer">
-                <input type="checkbox" className="accent-primary cursor-pointer" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+
+            <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.24em] text-muted-foreground/70">
+              <label className="flex items-center gap-2 select-none">
+                <input
+                  type="checkbox"
+                  className="size-4 rounded border border-border/60 bg-[#0c1624]"
+                  style={{ accentColor: "hsl(var(--primary))" }}
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
                 <span>{t("auth.rememberMe")}</span>
               </label>
-              <Link to="/auth/forgot-password" className="text-sm text-primary hover:text-primary/80 transition-colors">{t("auth.forgotPassword")}</Link>
+              <Link
+                to="/auth/forgot-password"
+                className="text-primary transition-colors hover:text-primary/80"
+              >
+                {t("auth.forgotPassword")}
+              </Link>
             </div>
-            {error && <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded px-3 py-2">{error}</div>}
-            <Button type="submit" className="w-full h-10 font-medium" disabled={loading}>{loading ? "Signing in..." : t("auth.login")}</Button>
+
+            {error && (
+              <div className="rounded-full border border-destructive/30 bg-destructive/15 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.24em] text-destructive">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="h-11 w-full rounded-full border border-primary/40 bg-primary/20 text-xs font-semibold uppercase tracking-[0.32em] text-primary transition-colors hover:bg-primary/30"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : t("auth.login")}
+            </Button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/30"></div>
+                <div className="w-full border-t border-border/30" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">or</span>
+              <div className="relative flex justify-center text-[0.65rem] uppercase tracking-[0.26em] text-muted-foreground/70">
+                <span className="bg-gradient-to-r from-[#131f32] via-[#0e1827] to-[#0a111d] px-3">or</span>
               </div>
             </div>
 
-            <div className="text-center">
-              <Link to="/auth/request-access" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t("auth.requestAccess")}</Link>
+            <div className="text-center text-[0.68rem] uppercase tracking-[0.26em] text-muted-foreground/70">
+              <Link to="/auth/request-access" className="transition-colors hover:text-foreground">
+                {t("auth.requestAccess")}
+              </Link>
             </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Demo: Use emails like <code className="bg-muted px-1.5 py-0.5 rounded">admin@</code>, <code className="bg-muted px-1.5 py-0.5 rounded">trader@</code>, or <code className="bg-muted px-1.5 py-0.5 rounded">senior@</code>
+            <p className="text-center text-[0.6rem] uppercase tracking-[0.24em] text-muted-foreground/60">
+              Demo: use emails like <code className="rounded bg-[#0d1625] px-2 py-1 text-primary">admin@</code>, <code className="rounded bg-[#0d1625] px-2 py-1 text-primary">trader@</code>, or <code className="rounded bg-[#0d1625] px-2 py-1 text-primary">senior@</code>
             </p>
           </form>
-          <footer className="mt-8 pt-6 border-t border-border/30 text-center text-xs text-muted-foreground space-y-2">
+          <footer className="text-center text-[0.6rem] uppercase tracking-[0.32em] text-muted-foreground/60">
             <div className="flex items-center justify-center gap-4">
-              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+              <a href="#" className="transition-colors hover:text-foreground">Terms</a>
               <span className="text-border/60">•</span>
-              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="#" className="transition-colors hover:text-foreground">Privacy</a>
               <span className="text-border/60">•</span>
-              <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+              <a href="#" className="transition-colors hover:text-foreground">Contact</a>
             </div>
-            <p>© 2024 NQHUB. All rights reserved.</p>
+            <p className="mt-3">© 2024 NQHUB. All rights reserved.</p>
           </footer>
         </div>
       </div>
