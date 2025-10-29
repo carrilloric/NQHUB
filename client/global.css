@@ -101,5 +101,59 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rounding-mode" 0;
+  }
+
+  /* Smooth scrollbars */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted;
+  }
+}
+
+@layer utilities {
+  /* Trading colors - Bullish (Green) and Bearish (Red) */
+  .text-bullish {
+    @apply text-green-500;
+  }
+
+  .text-bearish {
+    @apply text-red-500;
+  }
+
+  .bg-bullish {
+    @apply bg-green-500/10;
+  }
+
+  .bg-bearish {
+    @apply bg-red-500/10;
+  }
+
+  .border-bullish {
+    @apply border-green-500;
+  }
+
+  .border-bearish {
+    @apply border-red-500;
+  }
+
+  /* Card variants */
+  .card-subtle {
+    @apply bg-card border border-border/40 rounded-md;
+  }
+
+  .card-hover {
+    @apply transition-colors hover:bg-muted;
   }
 }
