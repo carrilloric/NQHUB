@@ -90,27 +90,27 @@
 @layer utilities {
   /* Trading colors - Bullish (Green) and Bearish (Red) */
   .text-bullish {
-    @apply text-green-500;
+    color: hsl(var(--bullish));
   }
 
   .text-bearish {
-    @apply text-red-500;
+    color: hsl(var(--bearish));
   }
 
   .bg-bullish {
-    @apply bg-green-500/10;
+    background-color: hsla(var(--bullish), 0.14);
   }
 
   .bg-bearish {
-    @apply bg-red-500/10;
+    background-color: hsla(var(--bearish), 0.14);
   }
 
   .border-bullish {
-    @apply border-green-500;
+    border-color: hsl(var(--bullish));
   }
 
   .border-bearish {
-    @apply border-red-500;
+    border-color: hsl(var(--bearish));
   }
 
   /* Card variants */
