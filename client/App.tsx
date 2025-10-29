@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import DataModule from "./pages/DataModule";
 import WithLayout from "./pages/Placeholders";
 import { AppProvider, useAuth } from "@/state/app";
 
