@@ -144,8 +144,8 @@ export const DataModule: React.FC = () => {
             <Tabs defaultValue="upload" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="upload">📤 Data Upload</TabsTrigger>
-                <TabsTrigger value="charts">📊 Charts</TabsTrigger>
                 <TabsTrigger value="etl">⚙️ ETL Pipeline</TabsTrigger>
+                <TabsTrigger value="charts">📊 Charts</TabsTrigger>
               </TabsList>
 
               <TabsContent value="upload" className="flex-1 overflow-hidden">
@@ -159,14 +159,14 @@ export const DataModule: React.FC = () => {
                 />
               </TabsContent>
 
-              <TabsContent value="charts" className="flex-1 overflow-hidden">
-                <ChartsSection />
-              </TabsContent>
-
               <TabsContent value="etl" className="flex-1 overflow-auto">
                 <div className="p-6">
                   <ETLDashboard />
                 </div>
+              </TabsContent>
+
+              <TabsContent value="charts" className="flex-1 overflow-hidden">
+                <ChartsSection />
               </TabsContent>
             </Tabs>
           </div>
