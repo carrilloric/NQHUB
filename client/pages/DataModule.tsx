@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { DataUploadSection } from "@/components/data-module/DataUploadSection";
+import { DataIngestETLSection } from "@/components/data-module/DataIngestETLSection";
 import { ChartsSection } from "@/components/data-module/ChartsSection";
-import { ETLDashboard } from "@/components/data-module/etl/ETLDashboard";
+import { DataAnalysisSection } from "@/components/data-module/DataAnalysisSection";
 import { ChatWorkspaceAside } from "@/components/dashboard/ChatWorkspaceAside";
 import { useI18n } from "@/state/app";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +26,6 @@ export const DataModule: React.FC = () => {
   const { t } = useI18n();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
-  const [selectedTimeframe, setSelectedTimeframe] = useState<string>("1h");
 
   const handleFileUpload = (file: File, type: "prices" | "news") => {
     const newFile: UploadedFile = {
@@ -49,7 +48,7 @@ export const DataModule: React.FC = () => {
       ] : undefined,
     };
 
-    setFiles([newFile, ...files]);
+    setFiles((prev) => [newFile, ...prev]);
 
     // Simulate upload progress
     let progress = 0;
@@ -145,16 +144,16 @@ export const DataModule: React.FC = () => {
               </div>
 
               <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-[#121b2d] via-[#0b1523] to-[#090f19] shadow-[0_24px_48px_rgba(0,0,0,0.55)]">
-                <Tabs defaultValue="upload" className="flex h-full flex-col">
+                <Tabs defaultValue="ingest" className="flex h-full flex-col">
                   <TabsList className="grid w-full grid-cols-3 px-4">
-                    <TabsTrigger value="upload">📤 Data Upload</TabsTrigger>
-                    <TabsTrigger value="etl">⚙️ ETL Pipeline</TabsTrigger>
+                    <TabsTrigger value="ingest">🧪 Data Ingest & ETL</TabsTrigger>
                     <TabsTrigger value="charts">📊 Charts</TabsTrigger>
+                    <TabsTrigger value="analysis">📈 Data Analysis</TabsTrigger>
                   </TabsList>
 
                   <div className="flex-1 overflow-hidden">
-                    <TabsContent value="upload" className="flex h-full flex-col overflow-hidden px-6 pb-8 pt-6">
-                      <DataUploadSection
+                    <TabsContent value="ingest" className="flex h-full flex-col overflow-hidden px-6 pb-8 pt-6">
+                      <DataIngestETLSection
                         files={files}
                         selectedFile={selectedFile}
                         onSelectFile={setSelectedFile}
@@ -164,12 +163,12 @@ export const DataModule: React.FC = () => {
                       />
                     </TabsContent>
 
-                    <TabsContent value="etl" className="flex h-full flex-col overflow-auto px-6 pb-8 pt-6">
-                      <ETLDashboard />
-                    </TabsContent>
-
                     <TabsContent value="charts" className="flex h-full flex-col overflow-hidden px-0 pb-0 pt-4">
                       <ChartsSection />
+                    </TabsContent>
+
+                    <TabsContent value="analysis" className="flex h-full flex-col overflow-auto px-6 pb-8 pt-6">
+                      <DataAnalysisSection />
                     </TabsContent>
                   </div>
                 </Tabs>
