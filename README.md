@@ -54,6 +54,7 @@ pnpm dev
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/api/docs
 - Neo4j Browser: http://localhost:7474
+- RedisInsight: http://localhost:8001
 - Mailpit (emails): http://localhost:8025
 - Grafana: http://localhost:3001
 
@@ -67,14 +68,35 @@ pnpm dev
 
 ### Backend
 - Python 3.11, FastAPI
-- PostgreSQL + TimescaleDB
-- Redis, Neo4j
+- **PostgreSQL + TimescaleDB** (historical time-series data)
+- **Redis Stack** with TimeSeries, JSON, Search (real-time data & cache)
+- **Neo4j** (knowledge graph)
 - LangGraph, mem0, ElevenLabs (AI)
 
 ### Infrastructure
 - Docker Compose
 - Prometheus, Grafana, Loki (monitoring)
 - Terraform, Ansible (deployment)
+
+### Data Architecture
+
+NQHUB uses a **dual-layer time-series architecture** optimized for both real-time performance and historical analysis:
+
+**Real-time Layer (RedisTimeSeries)**
+- Ultra-fast ingestion (~1M+ writes/sec)
+- Live chart data (last 24-48 hours)
+- In-memory aggregations
+- Sub-millisecond query latency
+- Auto-downsampling to TimescaleDB
+
+**Historical Layer (TimescaleDB)**
+- Long-term storage (years)
+- Complex SQL queries
+- Backtesting & analytics
+- Automated compression
+- Integration with PostgreSQL ecosystem
+
+**Flow**: `Market Data → RedisTimeSeries (live) → Downsample → TimescaleDB (historical)`
 
 ## 📚 Documentation
 
