@@ -1,0 +1,34 @@
+"""User Schemas"""
+from datetime import datetime
+from pydantic import BaseModel, EmailStr, ConfigDict
+from app.models.user import UserRole
+
+
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: str | None = None
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    full_name: str | None = None
+    password: str | None = None
+
+
+class UserInDB(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    role: UserRole
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    last_login: datetime | None = None
+
+
+class User(UserInDB):
+    pass
