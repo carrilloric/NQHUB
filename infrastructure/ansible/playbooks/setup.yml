@@ -1,0 +1,64 @@
+---
+# NQHUB Server Setup Playbook
+# Initial setup of production server
+
+- name: Setup NQHUB Server
+  hosts: production
+  become: yes
+  gather_facts: yes
+
+  vars:
+    nqhub_user: nqhub
+    nqhub_home: /opt/nqhub
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+  roles:
+    - role: docker
+      tags: docker
+
+    - role: nvidia
+      tags: nvidia
+
+    - role: monitoring
+      tags: monitoring
+
+  post_tasks:
+    - name: Create NQHUB user
+      user:
+        name: "{{ nqhub_user }}"
+        shell: /bin/bash
+        create_home: yes
+        home: "{{ nqhub_home }}"
+
+    - name: Add NQHUB user to docker group
+      user:
+        name: "{{ nqhub_user }}"
+        groups: docker
+        append: yes
+
+    - name: Setup firewall
+      ufw:
+        rule: "{{ item.rule }}"
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - { rule: 'allow', port: '22', proto: 'tcp' }    # SSH
+        - { rule: 'allow', port: '80', proto: 'tcp' }    # HTTP
+        - { rule: 'allow', port: '443', proto: 'tcp' }   # HTTPS
+        - { rule: 'allow', port: '8000', proto: 'tcp' }  # API
+      tags: firewall
+
+    - name: Enable firewall
+      ufw:
+        state: enabled
+        policy: deny
+      tags: firewall
+
+    - name: Display setup completion message
+      debug:
+        msg: "NQHUB server setup completed successfully!"

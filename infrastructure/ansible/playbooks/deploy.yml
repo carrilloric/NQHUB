@@ -1,0 +1,73 @@
+---
+# NQHUB Deployment Playbook
+
+- name: Deploy NQHUB Application
+  hosts: production
+  become: yes
+  gather_facts: yes
+
+  vars:
+    nqhub_repo: /opt/nqhub
+    docker_compose_file: docker/docker-compose.yml
+
+  tasks:
+    - name: Ensure NQHUB directory exists
+      file:
+        path: "{{ nqhub_repo }}"
+        state: directory
+        owner: nqhub
+        group: nqhub
+        mode: '0755'
+
+    - name: Copy application code
+      synchronize:
+        src: ../../../../
+        dest: "{{ nqhub_repo }}"
+        delete: yes
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+          - "--exclude=venv"
+          - "--exclude=.env"
+
+    - name: Copy environment files
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ nqhub_repo }}/{{ item.dest }}"
+        owner: nqhub
+        group: nqhub
+        mode: '0600'
+      loop:
+        - { src: '../../../backend/.env', dest: 'backend/.env' }
+        - { src: '../../../docker/.env', dest: 'docker/.env' }
+      tags: config
+
+    - name: Pull Docker images
+      docker_compose:
+        project_src: "{{ nqhub_repo }}/docker"
+        pull: yes
+      tags: docker
+
+    - name: Start Docker Compose services
+      docker_compose:
+        project_src: "{{ nqhub_repo }}/docker"
+        state: present
+        restarted: yes
+      tags: docker
+
+    - name: Wait for services to be healthy
+      wait_for:
+        host: localhost
+        port: "{{ item }}"
+        delay: 10
+        timeout: 60
+      loop:
+        - 5432  # PostgreSQL
+        - 6379  # Redis
+        - 7687  # Neo4j
+        - 8000  # Backend
+      tags: health
+
+    - name: Display deployment status
+      debug:
+        msg: "NQHUB deployment completed successfully!"
