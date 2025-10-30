@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 import logging
 
 from app.config import settings
+from app.api.v1 import api_router
 
 # Setup logging
 logging.basicConfig(
@@ -56,11 +57,8 @@ async def root():
         "docs": "/api/docs"
     }
 
-# TODO: Import and include routers
-# from app.api.v1 import auth, users, charts, etl, ai
-# app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-# app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
-# etc.
+# Include API routers
+app.include_router(api_router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():
