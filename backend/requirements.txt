@@ -7,13 +7,15 @@ python-multipart==0.0.6
 sqlalchemy==2.0.25
 alembic==1.13.1
 asyncpg==0.29.0
-psycopg2-binary==2.9.9
+psycopg[binary]==3.1.18  # Modern psycopg3 with binary package (no build required)
 
 # Redis
 redis==5.0.1
 hiredis==2.3.2
-redis-om==0.2.1  # Redis Object Mapper with JSON support
-redistimeseries==1.4.5  # Redis TimeSeries client
+# Note: redis-om and redistimeseries have compatibility issues with redis 5.x
+# We'll use redis client directly for TimeSeries commands (TS.CREATE, TS.ADD, etc.)
+# redis-om>=0.3.0  # Redis Object Mapper - incompatible with redis 5.x
+# redistimeseries>=1.4.5  # Redis TimeSeries client - incompatible with redis 5.x
 
 # Neo4j
 neo4j==5.15.0
@@ -30,7 +32,7 @@ pydantic==2.5.3
 pydantic-settings==2.1.0
 
 # CORS
-python-cors==1.0.0
+# FastAPI includes CORS middleware by default (fastapi.middleware.cors)
 
 # WebSockets
 websockets==12.0
