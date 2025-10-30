@@ -7,10 +7,9 @@ from alembic import context
 import asyncio
 
 # Import your models and Base
-# from app.models import Base
-# from app.models.user import User
-# from app.models.invitation import Invitation
-# etc.
+from app.db.base_class import Base
+from app.models.user import User
+from app.models.invitation import Invitation
 
 from app.config import settings
 
@@ -28,8 +27,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# target_metadata = Base.metadata
-target_metadata = None  # TODO: Import Base and set Base.metadata
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
