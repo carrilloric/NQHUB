@@ -1,19 +1,35 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { apiClient, ApiClient } from "@/services/api";
+import type { User as ApiUser, LoginRequest, RegisterRequest } from "@/types/auth";
 
+// Legacy role mapping for backward compatibility
 export type Role = "admin" | "trader" | "analystSenior" | "analystJunior";
 
-export interface User {
-  id: string;
-  email: string;
+// Extended user with legacy role mapping
+export interface User extends Omit<ApiUser, "role"> {
+  role: Role;
   firstName: string;
   lastName: string;
-  role: Role;
+}
+
+// Map backend roles to frontend roles
+function mapBackendRole(backendRole: "superuser" | "trader"): Role {
+  switch (backendRole) {
+    case "superuser":
+      return "admin";
+    case "trader":
+      return "trader";
+    default:
+      return "trader";
+  }
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string, remember?: boolean) => Promise<{ ok: boolean; message?: string }>;
+  register: (data: RegisterRequest) => Promise<{ ok: boolean; message?: string }>;
   logout: () => void;
 }
 
@@ -59,6 +75,7 @@ function useLocalStorage<T>(key: string, initial: T) {
 
 export const AppProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage<boolean>("ui.sidebarCollapsed", true);
   const [llmPanelOpen, setLlmPanelOpen] = useLocalStorage<boolean>("ui.llmPanelOpen", false);
@@ -66,6 +83,17 @@ export const AppProvider: React.FC<React.PropsWithChildren> = ({ children }) => 
   const [theme, setThemeState] = useLocalStorage<"dark" | "light">("theme", "light");
   const [language, setLanguage] = useLocalStorage<"en" | "es">("language", "en");
   const [pendingRequests, setPendingRequests] = useState<number>(3);
+
+  // Helper to transform API user to frontend user
+  const transformUser = useCallback((apiUser: ApiUser): User => {
+    const [firstName, ...lastNameParts] = (apiUser.full_name || apiUser.email.split("@")[0]).split(" ");
+    return {
+      ...apiUser,
+      role: mapBackendRole(apiUser.role),
+      firstName: firstName || "User",
+      lastName: lastNameParts.join(" ") || "",
+    };
+  }, []);
 
   const setTheme = useCallback((t: "dark" | "light") => {
     setThemeState(t);
@@ -81,30 +109,73 @@ export const AppProvider: React.FC<React.PropsWithChildren> = ({ children }) => 
     setTheme(theme);
   }, []); // eslint-disable-line
 
-  const login = useCallback<AuthState["login"]>(async (email, password, remember) => {
-    await new Promise((r) => setTimeout(r, 400));
-    if (!email || !password) return { ok: false, message: "Missing credentials" };
-    let role: Role = "trader";
-    if (email.toLowerCase().includes("admin")) role = "admin";
-    else if (email.toLowerCase().includes("senior")) role = "analystSenior";
-    else if (email.toLowerCase().includes("junior")) role = "analystJunior";
-    const newUser: User = {
-      id: "u_" + Math.random().toString(36).slice(2),
-      email,
-      firstName: "User",
-      lastName: "",
-      role,
+  // Load user on mount if token exists
+  useEffect(() => {
+    const loadUser = async () => {
+      const token = apiClient.getAccessToken();
+      if (token) {
+        try {
+          const apiUser = await apiClient.getMe();
+          setUser(transformUser(apiUser));
+        } catch (error) {
+          // Token invalid or expired, clear it
+          apiClient.clearTokens();
+        }
+      }
+      setIsLoading(false);
     };
-    setUser(newUser);
-    if (remember) localStorage.setItem("rememberedEmail", email);
-    return { ok: true };
-  }, []);
+
+    loadUser();
+  }, [transformUser]);
+
+  const login = useCallback<AuthState["login"]>(
+    async (email, password, remember) => {
+      try {
+        if (!email || !password) {
+          return { ok: false, message: "Missing credentials" };
+        }
+
+        await apiClient.login({ email, password });
+        const apiUser = await apiClient.getMe();
+        setUser(transformUser(apiUser));
+
+        if (remember) {
+          localStorage.setItem("rememberedEmail", email);
+        }
+
+        return { ok: true };
+      } catch (error) {
+        const message = ApiClient.getErrorMessage(error);
+        return { ok: false, message };
+      }
+    },
+    [transformUser]
+  );
+
+  const register = useCallback<AuthState["register"]>(
+    async (data) => {
+      try {
+        await apiClient.register(data);
+        const apiUser = await apiClient.getMe();
+        setUser(transformUser(apiUser));
+        return { ok: true };
+      } catch (error) {
+        const message = ApiClient.getErrorMessage(error);
+        return { ok: false, message };
+      }
+    },
+    [transformUser]
+  );
 
   const logout = useCallback(() => {
+    apiClient.logout();
     setUser(null);
   }, []);
 
-  const auth = useMemo<AuthState>(() => ({ user, isAuthenticated: !!user, login, logout }), [user, login, logout]);
+  const auth = useMemo<AuthState>(
+    () => ({ user, isAuthenticated: !!user, isLoading, login, register, logout }),
+    [user, isLoading, login, register, logout]
+  );
 
   const ui = useMemo<UIState>(() => ({
     sidebarCollapsed,

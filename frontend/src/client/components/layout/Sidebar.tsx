@@ -10,6 +10,7 @@ import {
   Settings as Cog,
   Sigma,
   TrendingUp,
+  Mail,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,12 @@ export const Sidebar: React.FC = () => {
       icon: Bot,
       label: t("nav.botModule"),
       visible: user?.role === "trader" || user?.role === "admin",
+    },
+    {
+      to: "/invitations",
+      icon: Mail,
+      label: "Invitations",
+      visible: user?.role === "admin",
     },
     { to: "/settings", icon: Cog, label: t("nav.settings"), visible: true },
     { to: "/help", icon: HelpCircle, label: t("nav.help"), visible: true },
@@ -105,41 +112,76 @@ export const Sidebar: React.FC = () => {
               </NavLink>
             ))}
           {user?.role === "admin" && (
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) =>
-                cn(
-                  "group relative mt-4 flex items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-all",
-                  isActive
-                    ? "border border-primary/40 bg-primary/10 text-foreground shadow-inner"
-                    : "border border-transparent text-muted-foreground/80 hover:border-primary/30 hover:bg-sidebar-accent/60 hover:text-foreground",
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={cn(
-                      "pointer-events-none absolute left-2 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full bg-primary/80 transition-opacity",
-                      isActive
-                        ? "opacity-100"
-                        : "opacity-0 group-hover:opacity-50",
+            <>
+              <NavLink
+                to="/admin/users"
+                className={({ isActive }) =>
+                  cn(
+                    "group relative mt-4 flex items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-all",
+                    isActive
+                      ? "border border-primary/40 bg-primary/10 text-foreground shadow-inner"
+                      : "border border-transparent text-muted-foreground/80 hover:border-primary/30 hover:bg-sidebar-accent/60 hover:text-foreground",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute left-2 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full bg-primary/80 transition-opacity",
+                        isActive
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-50",
+                      )}
+                    />
+                    <LayoutDashboard
+                      className={cn(
+                        "size-5 flex-shrink-0 transition-colors",
+                        isActive
+                          ? "text-primary"
+                          : "text-muted-foreground/70 group-hover:text-foreground",
+                      )}
+                    />
+                    {!ui.sidebarCollapsed && (
+                      <span>{t("nav.userManagement")}</span>
                     )}
-                  />
-                  <LayoutDashboard
-                    className={cn(
-                      "size-5 flex-shrink-0 transition-colors",
-                      isActive
-                        ? "text-primary"
-                        : "text-muted-foreground/70 group-hover:text-foreground",
-                    )}
-                  />
-                  {!ui.sidebarCollapsed && (
-                    <span>{t("nav.userManagement")}</span>
-                  )}
-                </>
-              )}
-            </NavLink>
+                  </>
+                )}
+              </NavLink>
+              <NavLink
+                to="/admin/invitations"
+                className={({ isActive }) =>
+                  cn(
+                    "group relative mt-1 flex items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-all",
+                    isActive
+                      ? "border border-primary/40 bg-primary/10 text-foreground shadow-inner"
+                      : "border border-transparent text-muted-foreground/80 hover:border-primary/30 hover:bg-sidebar-accent/60 hover:text-foreground",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute left-2 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full bg-primary/80 transition-opacity",
+                        isActive
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-50",
+                      )}
+                    />
+                    <Mail
+                      className={cn(
+                        "size-5 flex-shrink-0 transition-colors",
+                        isActive
+                          ? "text-primary"
+                          : "text-muted-foreground/70 group-hover:text-foreground",
+                      )}
+                    />
+                    {!ui.sidebarCollapsed && <span>Invitations</span>}
+                  </>
+                )}
+              </NavLink>
+            </>
           )}
         </nav>
         {!ui.sidebarCollapsed && (

@@ -7,19 +7,38 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
+import Register from "./pages/Register";
+import Invitations from "./pages/Invitations";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import DataModule from "./pages/DataModule";
 import WithLayout from "./pages/Placeholders";
-import { AppProvider, useAuth } from "@/state/app";
+import { AppProvider, useAuth, Role } from "@/state/app";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+const ProtectedRoute: React.FC<{
+  children: React.ReactNode;
+  requiredRole?: Role;
+}> = ({ children, requiredRole }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -32,6 +51,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/dashboard"
               element={
@@ -102,8 +122,16 @@ const App = () => (
             <Route
               path="/admin/users"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="admin">
                   <WithLayout title="User Management" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/invitations"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Invitations />
                 </ProtectedRoute>
               }
             />

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { OHLCVCandle } from "@/shared/mock-data";
+import type { OHLCVCandle } from "@shared/mock-data";
 
 /**
  * INSTALLATION REQUIRED:

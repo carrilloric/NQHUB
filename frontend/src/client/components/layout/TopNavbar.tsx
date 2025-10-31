@@ -51,12 +51,12 @@ export const TopNavbar: React.FC = () => {
             )}
           </div>
           {user && (
-            <div className="hidden md:flex items-center pl-3 ml-3 border-l border-border/40">
-              <div className="flex flex-col mr-3">
+            <div className="flex items-center pl-3 ml-3 border-l border-border/40">
+              <div className="hidden md:flex flex-col mr-3">
                 <span className="text-sm font-semibold leading-5">{user.firstName || user.email}</span>
                 <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{user.role}</span>
               </div>
-              <ToolbarIcon asChild aria-label="User Menu">
+              <ToolbarIcon className="hidden md:inline-flex" asChild aria-label="User Menu">
                 <button className="flex items-center gap-1">
                   <User className="size-4" />
                   <ChevronDown className="size-4" />
@@ -65,10 +65,10 @@ export const TopNavbar: React.FC = () => {
               <ToolbarIcon asChild className="ml-1" aria-label="Logout" onClick={logout}>
                 <button className="flex items-center gap-1 text-sm font-semibold">
                   <LogOut className="size-4" />
-                  {t("auth.logout")}
+                  <span className="hidden md:inline">{t("auth.logout")}</span>
                 </button>
               </ToolbarIcon>
-              <ToolbarIcon className="ml-1" aria-label="Settings">
+              <ToolbarIcon className="hidden md:inline-flex ml-1" aria-label="Settings">
                 <Settings className="size-4" />
               </ToolbarIcon>
             </div>

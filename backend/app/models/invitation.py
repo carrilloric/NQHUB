@@ -1,7 +1,7 @@
 """
 Invitation Model
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import String, DateTime, Enum, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -45,7 +45,7 @@ class Invitation(Base):
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.utcnow() + timedelta(days=7)
+        default=lambda: datetime.now(timezone.utc) + timedelta(days=7)
     )
 
     # Relationships
@@ -65,7 +65,7 @@ class Invitation(Base):
         """Check if invitation is still valid"""
         return (
             self.used_at is None and
-            self.expires_at > datetime.utcnow()
+            self.expires_at > datetime.now(timezone.utc)
         )
 
     @staticmethod

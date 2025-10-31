@@ -1,4 +1,5 @@
 """Invitation Endpoints (Superuser only)"""
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -24,7 +25,8 @@ async def create_invitation(
         token=Invitation.generate_token(),
         email=data.email,
         role=data.role,
-        created_by_id=current_user.id
+        created_by_id=current_user.id,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=data.expires_in_days)
     )
     db.add(invitation)
     await db.commit()

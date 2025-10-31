@@ -7,10 +7,11 @@ from app.models.user import UserRole
 class InvitationCreate(BaseModel):
     email: EmailStr | None = None
     role: UserRole = UserRole.TRADER
+    expires_in_days: int = 7
 
 
 class InvitationResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
     id: int
     token: str
@@ -21,4 +22,3 @@ class InvitationResponse(BaseModel):
     created_at: datetime
     used_at: datetime | None
     expires_at: datetime
-    is_valid: bool

@@ -36,118 +36,141 @@ export default function Index() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(23,211,218,0.18),_transparent)] text-foreground">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,rgba(8,13,23,0.95),rgba(5,9,16,0.92))]" aria-hidden />
-      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md space-y-10">
-          <div className="space-y-3 text-center">
-            <div className="text-4xl font-black uppercase tracking-[0.4em] text-foreground/95">
-              <span className="text-secondary">NQ</span>HUB
-            </div>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-muted-foreground/70">
-              Professional Trading Platform
-            </p>
-          </div>
-          <form
-            onSubmit={onSubmit}
-            className="space-y-6 rounded-3xl border border-border/40 bg-gradient-to-br from-[#131f32] via-[#0e1827] to-[#0a111d] p-8 shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
-          >
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.26em] text-muted-foreground/70">
-                  {t("auth.email")}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  className="rounded-full border border-border/40 bg-[#0c1624] px-4 py-3 text-sm text-muted-foreground/80 focus-visible:ring-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.26em] text-muted-foreground/70">
-                  {t("auth.password")}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                  className="rounded-full border border-border/40 bg-[#0c1624] px-4 py-3 text-sm text-muted-foreground/80 focus-visible:ring-primary"
-                />
-              </div>
+    <div className="min-h-screen bg-[#0a1628] flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo */}
+        <div className="text-center space-y-2">
+          <h1 className="text-5xl font-bold tracking-[0.2em]">
+            <span className="text-[#e8b44d]">NQ</span>
+            <span className="text-white">HUB</span>
+          </h1>
+          <p className="text-[#6b7c93] text-xs uppercase tracking-[0.3em]">
+            Professional Trading Platform
+          </p>
+        </div>
+
+        {/* Form Card */}
+        <div className="bg-[#0f1f3a] rounded-2xl p-8 shadow-2xl border border-[#1a2d4a]">
+          <form onSubmit={onSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[#6b7c93] text-xs uppercase tracking-wider">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                className="bg-[#0a1628] border-[#1a2d4a] text-white placeholder:text-[#4a5a72] focus:border-[#2dd4bf] focus:ring-[#2dd4bf]"
+              />
             </div>
 
-            <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.24em] text-muted-foreground/70">
-              <label className="flex items-center gap-2 select-none">
+            {/* Password Field */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-[#6b7c93] text-xs uppercase tracking-wider">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={8}
+                className="bg-[#0a1628] border-[#1a2d4a] text-white placeholder:text-[#4a5a72] focus:border-[#2dd4bf] focus:ring-[#2dd4bf]"
+              />
+            </div>
+
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-[#6b7c93] cursor-pointer">
                 <input
                   type="checkbox"
-                  className="size-4 rounded border border-border/60 bg-[#0c1624]"
-                  style={{ accentColor: "hsl(var(--primary))" }}
+                  className="w-4 h-4 rounded border-[#1a2d4a] bg-[#0a1628] text-[#2dd4bf] focus:ring-[#2dd4bf]"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
                 />
-                <span>{t("auth.rememberMe")}</span>
+                <span className="text-xs uppercase tracking-wide">Remember me</span>
               </label>
               <Link
                 to="/auth/forgot-password"
-                className="text-primary transition-colors hover:text-primary/80"
+                className="text-[#2dd4bf] hover:text-[#34e4cb] text-xs uppercase tracking-wide transition-colors"
               >
-                {t("auth.forgotPassword")}
+                Forgot Password?
               </Link>
             </div>
 
+            {/* Error Message */}
             {error && (
-              <div className="rounded-full border border-destructive/30 bg-destructive/15 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.24em] text-destructive">
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm text-center">
                 {error}
               </div>
             )}
 
+            {/* Login Button */}
             <Button
               type="submit"
-              className="h-11 w-full rounded-full border border-primary/40 bg-primary/20 text-xs font-semibold uppercase tracking-[0.32em] text-primary transition-colors hover:bg-primary/30"
+              className="w-full bg-[#2dd4bf] hover:bg-[#34e4cb] text-[#0a1628] font-semibold uppercase tracking-wide py-6 rounded-full transition-colors"
               disabled={loading}
             >
-              {loading ? "Signing in..." : t("auth.login")}
+              {loading ? "Signing in..." : "Login"}
             </Button>
 
-            <div className="relative">
+            {/* Divider */}
+            <div className="relative py-3">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/30" />
+                <div className="w-full border-t border-[#1a2d4a]" />
               </div>
-              <div className="relative flex justify-center text-[0.65rem] uppercase tracking-[0.26em] text-muted-foreground/70">
-                <span className="bg-gradient-to-r from-[#131f32] via-[#0e1827] to-[#0a111d] px-3">or</span>
+              <div className="relative flex justify-center">
+                <span className="bg-[#0f1f3a] px-4 text-[#6b7c93] text-xs uppercase tracking-wide">
+                  or
+                </span>
               </div>
             </div>
 
-            <div className="text-center text-[0.68rem] uppercase tracking-[0.26em] text-muted-foreground/70">
-              <Link to="/auth/request-access" className="transition-colors hover:text-foreground">
-                {t("auth.requestAccess")}
+            {/* Request Access */}
+            <div className="text-center">
+              <Link
+                to="/register"
+                className="text-[#6b7c93] hover:text-[#2dd4bf] text-xs uppercase tracking-wide transition-colors"
+              >
+                Request Access
               </Link>
             </div>
-            <p className="text-center text-[0.6rem] uppercase tracking-[0.24em] text-muted-foreground/60">
-              Demo: use emails like <code className="rounded bg-[#0d1625] px-2 py-1 text-primary">admin@</code>, <code className="rounded bg-[#0d1625] px-2 py-1 text-primary">trader@</code>, or <code className="rounded bg-[#0d1625] px-2 py-1 text-primary">senior@</code>
+
+            {/* Demo Info */}
+            <p className="text-center text-[#4a5a72] text-xs uppercase tracking-wide">
+              Demo: use emails like{" "}
+              <code className="text-[#2dd4bf] font-semibold">admin@</code>,{" "}
+              <code className="text-[#2dd4bf] font-semibold">trader@</code>, or{" "}
+              <code className="text-[#2dd4bf] font-semibold">senior@</code>
             </p>
           </form>
-          <footer className="text-center text-[0.6rem] uppercase tracking-[0.32em] text-muted-foreground/60">
-            <div className="flex items-center justify-center gap-4">
-              <a href="#" className="transition-colors hover:text-foreground">Terms</a>
-              <span className="text-border/60">•</span>
-              <a href="#" className="transition-colors hover:text-foreground">Privacy</a>
-              <span className="text-border/60">•</span>
-              <a href="#" className="transition-colors hover:text-foreground">Contact</a>
-            </div>
-            <p className="mt-3">© 2024 NQHUB. All rights reserved.</p>
-          </footer>
         </div>
+
+        {/* Footer */}
+        <footer className="text-center text-[#4a5a72] text-xs uppercase tracking-wide space-y-2">
+          <div className="flex items-center justify-center gap-4">
+            <a href="#" className="hover:text-[#6b7c93] transition-colors">
+              Terms
+            </a>
+            <span>•</span>
+            <a href="#" className="hover:text-[#6b7c93] transition-colors">
+              Privacy
+            </a>
+            <span>•</span>
+            <a href="#" className="hover:text-[#6b7c93] transition-colors">
+              Contact
+            </a>
+          </div>
+          <p>© 2024 NQHUB. All rights reserved.</p>
+        </footer>
       </div>
     </div>
   );
