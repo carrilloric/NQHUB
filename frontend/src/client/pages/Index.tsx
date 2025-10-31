@@ -99,10 +99,10 @@ export default function Index() {
                 <span className="text-xs uppercase tracking-wide">Remember me</span>
               </label>
               <Link
-                to="/auth/forgot-password"
+                to="/forgot-password"
                 className="text-[#2dd4bf] hover:text-[#34e4cb] text-xs uppercase tracking-wide transition-colors"
               >
-                Forgot Password?
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 

@@ -21,15 +21,19 @@
     "requestSubmitted": "Request submitted! Admin will review and notify you."
   },
   "passwordRecovery": {
-    "title": "Reset Password",
-    "sendCode": "Send Code",
-    "enterCode": "Enter the 6-digit code sent to your email",
-    "verifyCode": "Verify Code",
-    "resendCode": "Resend code",
-    "codeExpired": "Code expired",
+    "forgotPasswordTitle": "Forgot Password?",
+    "enterEmailInstruction": "Enter your email and we'll send you a reset link",
+    "sendResetLink": "Send Reset Link",
+    "checkEmail": "Check your email for the reset link",
+    "backToLogin": "Back to Login",
+    "resetPasswordTitle": "Reset Password",
     "newPassword": "New Password",
-    "resetPassword": "Reset Password",
-    "resetSuccess": "Password reset successful!"
+    "confirmPassword": "Confirm Password",
+    "resetButton": "Reset Password",
+    "resetSuccess": "Password reset successful! You can now login.",
+    "invalidToken": "Invalid or expired reset token",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters"
   },
   "dashboard": {
     "title": "Dashboard",

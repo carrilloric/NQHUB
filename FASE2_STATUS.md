@@ -359,7 +359,24 @@ frontend/src/client/
 
 ---
 
-**FASE 2 COMPLETADA** ✅
+## 🔄 En Progreso - Password Reset Feature
+
+### Completado recientemente:
+- ✅ Logout button visible para todos los usuarios (fix TopNavbar en Dashboard)
+- ✅ Sistema de invitaciones con timezone-aware datetime
+- ✅ E2E tests con Playwright setup completo
+- ✅ TypeScript errors resueltos
+
+### Próximo: Password Reset/Forgot Password
+- ⏳ Modelo PasswordResetToken (7 días de validez)
+- ⏳ Email automático con SMTP real
+- ⏳ Self-service password reset
+- ⏳ Frontend: ForgotPassword.tsx y ResetPassword.tsx
+- ⏳ E2E tests para flujo completo
+
+---
+
+**FASE 2 BASE COMPLETADA** ✅
 
 Backend y Frontend 100% implementados y funcionando. Sistema de autenticación completo con:
 - Login/Register con JWT
@@ -367,7 +384,8 @@ Backend y Frontend 100% implementados y funcionando. Sistema de autenticación c
 - RBAC (Role-Based Access Control)
 - Auto-refresh de tokens
 - Protected routes
+- Logout funcionando correctamente
 
 Servicios corriendo en:
 - Backend: http://localhost:8002/api/docs
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3001

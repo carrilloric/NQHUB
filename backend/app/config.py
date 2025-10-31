@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = "noreply@nqhub.com"
 
+    # ==================== FRONTEND ====================
+    FRONTEND_URL: str = "http://localhost:3001"
+
     # ==================== ENVIRONMENT ====================
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
 

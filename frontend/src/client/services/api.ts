@@ -149,6 +149,17 @@ class ApiClient {
     this.clearTokens();
   }
 
+  async forgotPassword(email: string): Promise<void> {
+    await this.client.post("/auth/forgot-password", { email });
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await this.client.post("/auth/reset-password", {
+      token,
+      new_password: newPassword,
+    });
+  }
+
   // ==================== Invitations Endpoints (Superuser only) ====================
 
   async createInvitation(data: InvitationCreate): Promise<Invitation> {

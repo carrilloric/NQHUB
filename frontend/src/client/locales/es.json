@@ -21,15 +21,19 @@
     "requestSubmitted": "¡Solicitud enviada! El admin revisará y te notificará."
   },
   "passwordRecovery": {
-    "title": "Restablecer Contraseña",
-    "sendCode": "Enviar Código",
-    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo",
-    "verifyCode": "Verificar Código",
-    "resendCode": "Reenviar código",
-    "codeExpired": "Código expirado",
+    "forgotPasswordTitle": "¿Olvidaste tu contraseña?",
+    "enterEmailInstruction": "Ingresa tu correo y te enviaremos un enlace para restablecerla",
+    "sendResetLink": "Enviar Enlace de Restablecimiento",
+    "checkEmail": "Revisa tu correo para el enlace de restablecimiento",
+    "backToLogin": "Volver al Inicio de Sesión",
+    "resetPasswordTitle": "Restablecer Contraseña",
     "newPassword": "Nueva Contraseña",
-    "resetPassword": "Restablecer Contraseña",
-    "resetSuccess": "¡Contraseña restablecida exitosamente!"
+    "confirmPassword": "Confirmar Contraseña",
+    "resetButton": "Restablecer Contraseña",
+    "resetSuccess": "¡Contraseña restablecida exitosamente! Ahora puedes iniciar sesión.",
+    "invalidToken": "Token de restablecimiento inválido o expirado",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres"
   },
   "dashboard": {
     "title": "Panel Principal",
