@@ -5,8 +5,8 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
-    port: 3000,
+    host: "0.0.0.0", // IPv4 - compatible with WSL2 port forwarding to Windows
+    port: 3001,
     fs: {
       allow: ["./src/client", "./src/shared"],
       deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**"],

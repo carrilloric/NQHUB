@@ -50,13 +50,30 @@ pnpm dev
 ```
 
 3. **Access the application**:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/api/docs
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:8002
+- API Docs: http://localhost:8002/api/docs
+- PostgreSQL: localhost:5433 (Docker container `nqhub_postgres`)
 - Neo4j Browser: http://localhost:7474
 - RedisInsight: http://localhost:8001
 - Mailpit (emails): http://localhost:8025
-- Grafana: http://localhost:3001
+
+**Database Connections** (see [DATABASE_CONNECTIONS.md](DATABASE_CONNECTIONS.md) for details):
+```bash
+# NQHUB PostgreSQL + TimescaleDB
+postgresql://nqhub:nqhub_password@localhost:5433/nqhub
+
+# Connect via Docker
+docker exec -it nqhub_postgres psql -U nqhub -d nqhub
+
+# Redis
+redis://localhost:6379/0
+
+# Neo4j Bolt
+bolt://neo4j:password@localhost:7687
+```
+
+**Note:** Port 5432 is reserved for legacy `nq_orderflow` database in another WSL instance.
 
 ## 📦 Tech Stack
 
@@ -98,13 +115,63 @@ NQHUB uses a **dual-layer time-series architecture** optimized for both real-tim
 
 **Flow**: `Market Data → RedisTimeSeries (live) → Downsample → TimescaleDB (historical)`
 
+### ETL Worker System
+
+NQHUB uses **4 Docker-based RQ workers** for parallel ETL processing with automatic fault tolerance.
+
+**Architecture**:
+- 4 parallel workers processing Redis queue (`etl_queue`)
+- Automatic restart on failure (`--restart unless-stopped`)
+- Health checks every 30 seconds
+- Graceful shutdown (SIGTERM/SIGINT handlers)
+- Shared temp storage via bind mount (`/tmp/etl_jobs`)
+
+**Quick Commands**:
+```bash
+# Start all 4 workers
+./scripts/start_workers.sh
+
+# Stop all workers
+./scripts/stop_workers.sh
+
+# Restart workers (e.g., after code changes)
+./scripts/restart_workers.sh
+
+# Monitor in real-time
+./scripts/monitor_etl.sh --watch
+
+# Check worker status via API
+curl http://localhost:8002/api/v1/etl/worker/status
+```
+
+**Worker Status**:
+- Each worker processes jobs independently from shared queue
+- Supports parallel processing of multiple uploads
+- Auto-reconnects to Redis if connection lost
+- Detailed logging with job-specific context
+
+See **[backend/ETL_PLAN.md](backend/ETL_PLAN.md)** for complete ETL system documentation.
+
 ## 📚 Documentation
 
+### Project & Architecture
 - **[PROJECT_PLANv0.md](PROJECT_PLANv0.md)** - Complete project plan and architecture
 - **[CLAUDE.md](CLAUDE.md)** - Claude Code guidance
 - **[MIGRATION_PLAN.md](MIGRATION_PLAN.md)** - VM migration plan (coming soon)
+
+### Code Documentation
 - **[frontend/README.md](frontend/README.md)** - Frontend documentation
 - **[backend/README.md](backend/README.md)** - Backend documentation
+
+### Database & ETL
+- **[DATABASE_CONNECTIONS.md](DATABASE_CONNECTIONS.md)** - All database connection details and troubleshooting
+- **[backend/DATABASE_SCHEMA.md](backend/DATABASE_SCHEMA.md)** - Complete PostgreSQL schema reference
+- **[backend/ETL_PLAN.md](backend/ETL_PLAN.md)** - ETL system implementation plan
+
+### Reference Data
+- **[_reference/docs/README.md](_reference/docs/README.md)** - Legacy data and documentation index
+- **[_reference/docs/DATA_DICTIONARY.md](_reference/docs/DATA_DICTIONARY.md)** - NQ Futures data structure guide
+- **[_reference/docs/LEGACY_DATABASE_SCHEMA.md](_reference/docs/LEGACY_DATABASE_SCHEMA.md)** - Legacy system analysis
 
 ## 🔧 Development
 

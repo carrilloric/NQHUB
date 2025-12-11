@@ -93,3 +93,18 @@ infrastructure/ansible/**/*.log
 *.tmp
 *.temp
 .cache/
+
+# Large data directories
+zip/
+_reference/
+images/
+
+# Test reports
+frontend/playwright-report/
+frontend/test-results/
+
+# Zone Identifier files (Windows)
+*:Zone.Identifier
+
+# Serena AI agent
+.serena/

@@ -16,11 +16,14 @@ class Settings(BaseSettings):
     )
 
     # ==================== DATABASE ====================
-    DATABASE_URL: str = "postgresql://nqhub:password@localhost:5432/nqhub"
-    DATABASE_URL_ASYNC: str = "postgresql+asyncpg://nqhub:password@localhost:5432/nqhub"
+    DATABASE_URL: str = "postgresql://nqhub:password@localhost:5433/nqhub"
+    DATABASE_URL_ASYNC: str = "postgresql+asyncpg://nqhub:password@localhost:5433/nqhub"
 
     # ==================== REDIS ====================
     REDIS_URL: str = "redis://localhost:6379"
+
+    # ==================== ETL ====================
+    ETL_TEMP_DIR: str = "/tmp/nqhub_etl"
 
     # ==================== NEO4J ====================
     NEO4J_URI: str = "bolt://localhost:7687"
@@ -34,7 +37,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ==================== CORS ====================
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3001", "http://localhost:3000"]
 
     # ==================== AI / LLM ====================
     # OpenAI

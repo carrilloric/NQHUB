@@ -65,6 +65,20 @@ async def startup_event():
     """Startup event handler"""
     logger.info(f"Starting NQHUB API - Environment: {settings.ENVIRONMENT}")
     logger.info(f"CORS origins: {settings.ALLOWED_ORIGINS}")
+
+    # Create ETL temp directory with correct permissions
+    from pathlib import Path
+    import os
+
+    etl_temp = Path(settings.ETL_TEMP_DIR)
+    try:
+        etl_temp.mkdir(parents=True, exist_ok=True, mode=0o777)
+        # Ensure permissions (in case directory already existed)
+        os.chmod(etl_temp, 0o777)
+        logger.info(f"✅ ETL temp directory ready: {etl_temp} (permissions: 777)")
+    except Exception as e:
+        logger.error(f"❌ Failed to create ETL temp directory: {e}")
+
     # TODO: Initialize database connections
     # TODO: Initialize Redis connection
     # TODO: Initialize Neo4j connection
@@ -82,7 +96,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8002,
         reload=True,
         log_level="info"
     )

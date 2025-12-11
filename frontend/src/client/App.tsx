@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import DataModule from "./pages/DataModule";
 import WithLayout from "./pages/Placeholders";
+import ChartTest from "./pages/ChartTest";
 import { AppProvider, useAuth, Role } from "@/state/app";
 
 const queryClient = new QueryClient();
@@ -163,6 +164,7 @@ const App = () => (
               path="/auth/forgot-password"
               element={<WithLayout title="Password Recovery" />}
             />
+            <Route path="/chart-test" element={<ChartTest />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

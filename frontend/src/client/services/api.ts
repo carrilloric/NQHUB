@@ -176,6 +176,244 @@ class ApiClient {
     await this.client.delete(`/invitations/${id}`);
   }
 
+  // ==================== ETL Endpoints ====================
+
+  async analyzeZip(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await this.client.post('/etl/analyze-zip', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  }
+
+  async uploadZip(file: File, selectedTimeframes?: string[]): Promise<import("@/types/etl").ETLJob> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (selectedTimeframes && selectedTimeframes.length > 0) {
+      formData.append('selected_timeframes', JSON.stringify(selectedTimeframes));
+    }
+
+    const response = await this.client.post<import("@/types/etl").ETLJob>('/etl/upload-zip', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  }
+
+  async getETLJobStatus(jobId: string): Promise<import("@/types/etl").ETLJob> {
+    const response = await this.client.get<import("@/types/etl").ETLJob>(`/etl/jobs/${jobId}`);
+    return response.data;
+  }
+
+  async listETLJobs(skip: number = 0, limit: number = 20, status?: string): Promise<import("@/types/etl").ETLJobList> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+
+    if (status) {
+      params.append('status', status);
+    }
+
+    const response = await this.client.get<import("@/types/etl").ETLJobList>(`/etl/jobs?${params}`);
+    return response.data;
+  }
+
+  async cancelETLJob(jobId: string): Promise<void> {
+    await this.client.delete(`/etl/jobs/${jobId}`);
+  }
+
+  // ==================== ETL Job Logs Methods (FASE 3) ====================
+
+  async getETLJobLogs(
+    jobId: string,
+    skip: number = 0,
+    limit: number = 100,
+    level?: string
+  ): Promise<import("@/types/etl").ETLJobLogList> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+
+    if (level) {
+      params.append('level', level);
+    }
+
+    const response = await this.client.get<import("@/types/etl").ETLJobLogList>(
+      `/etl/jobs/${jobId}/logs?${params}`
+    );
+    return response.data;
+  }
+
+  // ==================== Worker Status Methods (FASE 5) ====================
+
+  async getWorkerStatus(): Promise<import("@/types/etl").WorkerStatus> {
+    const response = await this.client.get<import("@/types/etl").WorkerStatus>('/etl/worker/status');
+    return response.data;
+  }
+
+  // ==================== Database Statistics Methods ====================
+
+  async getDatabaseStatistics(): Promise<import("@/types/etl").DatabaseStatistics> {
+    const response = await this.client.get<import("@/types/etl").DatabaseStatistics>('/etl/statistics');
+    return response.data;
+  }
+
+  // ==================== Symbol Details Methods (FASE 1) ====================
+
+  async getSymbolDetails(): Promise<import("@/types/etl").SymbolDetailsList> {
+    const response = await this.client.get<import("@/types/etl").SymbolDetailsList>('/etl/symbols/details');
+    return response.data;
+  }
+
+  // ==================== Coverage Heatmap Methods (FASE 1) ====================
+
+  async getCoverageHeatmap(
+    symbol?: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<import("@/types/etl").CoverageHeatMapResponse> {
+    const params = new URLSearchParams();
+
+    if (symbol) params.append('symbol', symbol);
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+
+    const queryString = params.toString();
+    const url = queryString ? `/etl/coverage?${queryString}` : '/etl/coverage';
+
+    const response = await this.client.get<import("@/types/etl").CoverageHeatMapResponse>(url);
+    return response.data;
+  }
+
+  // ==================== Cleanup Methods (FASE 2) ====================
+
+  async cleanupETLJobs(statusFilter: string = 'pending', olderThanHours: number = 24): Promise<{ deleted_count: number }> {
+    const params = new URLSearchParams({
+      status_filter: statusFilter,
+      older_than_hours: olderThanHours.toString(),
+    });
+
+    const response = await this.client.delete<{ deleted_count: number; status_filter: string; older_than_hours: number }>(
+      `/etl/jobs/cleanup?${params}`
+    );
+    return response.data;
+  }
+
+  // ==================== Pattern Detection ====================
+
+  /**
+   * Generate Fair Value Gaps for a date range
+   */
+  async generateFVGs(request: import("@/types/patterns").FVGDetectionRequest): Promise<import("@/types/patterns").FVGGenerationResponse> {
+    const response = await this.client.post<import("@/types/patterns").FVGGenerationResponse>('/patterns/fvgs/generate', request);
+    return response.data;
+  }
+
+  /**
+   * List detected FVGs with optional filters
+   */
+  async listFVGs(filters?: {
+    symbol: string;
+    timeframe?: string;
+    start_date?: string;
+    end_date?: string;
+    significance?: string;
+    status?: string;
+  }): Promise<import("@/types/patterns").FVGListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, value.toString());
+      });
+    }
+    const response = await this.client.get<import("@/types/patterns").FVGListResponse>(`/patterns/fvgs/list?${params}`);
+    return response.data;
+  }
+
+  /**
+   * Generate Liquidity Pools for a specific date
+   */
+  async generateLiquidityPools(request: import("@/types/patterns").LiquidityPoolDetectionRequest): Promise<import("@/types/patterns").LiquidityPoolGenerationResponse> {
+    const response = await this.client.post<import("@/types/patterns").LiquidityPoolGenerationResponse>('/patterns/liquidity-pools/generate', request);
+    return response.data;
+  }
+
+  /**
+   * List detected Liquidity Pools with optional filters
+   */
+  async listLiquidityPools(filters?: {
+    symbol: string;
+    timeframe?: string;
+    start_date?: string;
+    end_date?: string;
+    pool_type?: string;
+    strength?: string;
+    status?: string;
+  }): Promise<import("@/types/patterns").LiquidityPoolListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, value.toString());
+      });
+    }
+    const response = await this.client.get<import("@/types/patterns").LiquidityPoolListResponse>(`/patterns/liquidity-pools/list?${params}`);
+    return response.data;
+  }
+
+  /**
+   * Generate Order Blocks for a date range
+   */
+  async generateOrderBlocks(request: import("@/types/patterns").OrderBlockDetectionRequest): Promise<import("@/types/patterns").OrderBlockGenerationResponse> {
+    const response = await this.client.post<import("@/types/patterns").OrderBlockGenerationResponse>('/patterns/order-blocks/generate', request);
+    return response.data;
+  }
+
+  /**
+   * List detected Order Blocks with optional filters
+   */
+  async listOrderBlocks(filters?: {
+    symbol: string;
+    timeframe?: string;
+    start_date?: string;
+    end_date?: string;
+    ob_type?: string;
+    quality?: string;
+    status?: string;
+  }): Promise<import("@/types/patterns").OrderBlockListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, value.toString());
+      });
+    }
+    const response = await this.client.get<import("@/types/patterns").OrderBlockListResponse>(`/patterns/order-blocks/list?${params}`);
+    return response.data;
+  }
+
+  /**
+   * Get interaction history for a specific pattern
+   */
+  async getPatternInteractions(
+    patternType: "FVG" | "LP" | "OB",
+    patternId: number,
+    timeframe: string = "5min"
+  ): Promise<import("@/types/patterns").PatternInteractionsResponse> {
+    const response = await this.client.get<import("@/types/patterns").PatternInteractionsResponse>(
+      `/patterns/patterns/${patternType}/${patternId}/interactions?timeframe=${timeframe}`
+    );
+    return response.data;
+  }
+
   // ==================== Error Handling Helpers ====================
 
   static isApiError(error: unknown): error is AxiosError<ApiError> {

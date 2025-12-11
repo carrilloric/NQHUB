@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # PostgreSQL + TimescaleDB (existing container, now managed by compose)
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: nqhub_postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: nqhub
+      POSTGRES_PASSWORD: nqhub_password
+      POSTGRES_DB: nqhub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - nqhub_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          memory: 4G
+
+  # Redis (existing container, now managed by compose)
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: nqhub_redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"  # RedisInsight
+    networks:
+      - nqhub_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  # RQ Workers (4 instances) - NEW
+  worker-1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: nqhub_worker_1
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      # Database
+      DATABASE_URL: postgresql://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      DATABASE_URL_ASYNC: postgresql+asyncpg://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      # Redis
+      REDIS_URL: redis://nqhub_redis:6379
+      # Environment
+      ENVIRONMENT: development
+    volumes:
+      - ./backend:/app  # Mount code for development
+      - /tmp/etl_jobs:/tmp/etl_jobs  # Shared temp directory (bind mount)
+    networks:
+      - nqhub_network
+    restart: unless-stopped  # Auto-restart if worker crashes
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  worker-2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: nqhub_worker_2
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      DATABASE_URL_ASYNC: postgresql+asyncpg://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      REDIS_URL: redis://nqhub_redis:6379
+      ENVIRONMENT: development
+    volumes:
+      - ./backend:/app
+      - /tmp/etl_jobs:/tmp/etl_jobs
+    networks:
+      - nqhub_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  worker-3:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: nqhub_worker_3
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      DATABASE_URL_ASYNC: postgresql+asyncpg://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      REDIS_URL: redis://nqhub_redis:6379
+      ENVIRONMENT: development
+    volumes:
+      - ./backend:/app
+      - /tmp/etl_jobs:/tmp/etl_jobs
+    networks:
+      - nqhub_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  worker-4:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: nqhub_worker_4
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      DATABASE_URL_ASYNC: postgresql+asyncpg://nqhub:nqhub_password@nqhub_postgres:5432/nqhub
+      REDIS_URL: redis://nqhub_redis:6379
+      ENVIRONMENT: development
+    volumes:
+      - ./backend:/app
+      - /tmp/etl_jobs:/tmp/etl_jobs
+    networks:
+      - nqhub_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+networks:
+  nqhub_network:
+    driver: bridge
+
+volumes:
+  postgres_data:  # Persistent PostgreSQL data

@@ -4,29 +4,66 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-NQHUB is a professional trading analytics platform for NQ Futures (Nasdaq 100 E-mini Futures) built as a full-stack React application with integrated Express server. The platform features data ingestion, charting/visualization, ETL pipeline monitoring, and an AI-powered chat assistant.
+NQHUB is a professional trading analytics platform for NQ Futures (Nasdaq 100 E-mini Futures) built as a full-stack React application with FastAPI backend. The platform features data ingestion, charting/visualization, ETL pipeline monitoring, and an AI-powered chat assistant.
+
+## Development Environment
+
+### Service Ports
+- **Frontend (Vite)**: http://localhost:3001
+- **Backend (FastAPI)**: http://localhost:8002
+  - API Docs: http://localhost:8002/api/docs
+  - Redoc: http://localhost:8002/api/redoc
+- **PostgreSQL + TimescaleDB**: localhost:5433
+  - Docker container: `nqhub_postgres`
+  - User: `nqhub` / Password: `nqhub_password`
+  - Database: `nqhub`
+- **Mailpit (email testing)**: http://localhost:8025
+- **Neo4j Browser**: http://localhost:7474 (planned)
+- **RedisInsight**: http://localhost:8001 (planned)
+
+**Important:** Port 5432 is reserved for legacy `nq_orderflow` database in another WSL instance.
+
+### Docker Containers
+
+```bash
+# Check running containers
+docker ps
+
+# PostgreSQL/TimescaleDB (always use port 5433)
+docker start nqhub_postgres
+docker stop nqhub_postgres
+
+# Restart if needed
+docker restart nqhub_postgres
+```
 
 ## Technology Stack
 
-- **Package Manager**: pnpm (required)
+- **Package Manager**: pnpm (frontend), pip (backend)
 - **Frontend**: React 18 + React Router 6 SPA + TypeScript + Vite + TailwindCSS 3
-- **Backend**: Express server integrated with Vite dev server
+- **Backend**: FastAPI (Python 3.11+) + PostgreSQL + TimescaleDB
 - **State Management**: Zustand for data module state, React Context for app-wide state
 - **UI Components**: Radix UI + custom components in `client/components/ui/`
-- **Testing**: Vitest
+- **Testing**: Playwright (E2E), Vitest (unit tests)
 - **Charting**: Prepared for SciChart integration (not yet installed)
 
 ## Development Commands
 
+### Frontend (from /frontend)
 ```bash
-pnpm dev              # Start dev server (client + server on port 8080)
-pnpm build            # Build both client and server
-pnpm build:client     # Build client only (outputs to dist/spa)
-pnpm build:server     # Build server only
-pnpm start            # Start production server
+pnpm dev              # Start Vite dev server on http://localhost:3001
+pnpm build            # Build for production
 pnpm test             # Run Vitest tests
+pnpm test:e2e         # Run Playwright E2E tests
 pnpm typecheck        # TypeScript validation
-pnpm format.fix       # Format code with Prettier
+```
+
+### Backend (from /backend)
+```bash
+source .venv/bin/activate              # Activate virtual environment
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8002  # Start FastAPI server
+alembic upgrade head                   # Run database migrations
+pytest                                 # Run backend tests
 ```
 
 ## Project Architecture

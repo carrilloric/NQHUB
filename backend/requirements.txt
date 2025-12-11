@@ -39,6 +39,9 @@ websockets==12.0
 
 # Background tasks
 celery==5.3.6
+rq==1.15.1  # Python RQ (Redis Queue) - simpler alternative to Celery
 
 # Utils
 pytz==2024.1
+zstandard==0.22.0  # Decompress .zst files from Databento
+psutil==5.9.5
