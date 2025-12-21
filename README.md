@@ -211,25 +211,29 @@ pnpm test
 
 ## 🎯 Features
 
-### Current (v0)
-- ✅ Project structure with frontend/backend separation
-- ✅ Docker Compose with all services
-- ✅ FastAPI backend with multi-LLM configuration
-- ✅ Monitoring stack (Grafana + Prometheus + Loki)
-- ✅ Development scripts
+### Core Modules
+- 🔐 **Authentication & User Management** - Role-based access control (Admin, Trader, Analyst Senior/Junior)
+- 📊 **Data Module** - ETL pipeline monitoring, multi-chart visualization, pattern detection
+- 📈 **Statistical Analysis** - Exploratory data analysis, unsupervised learning, linear regression
+- 🧪 **Backtesting** - Rule-based and AI-powered strategy testing (planned)
+- 🤖 **BOT Module** - Automated trading execution (planned)
 
-### In Development
-- 🚧 Authentication system (JWT + invitations)
-- 🚧 AI Assistant with LangGraph
-- 🚧 Data ingestion and charting
-- 🚧 Real-time WebSocket
-- 🚧 Voice integration (ElevenLabs)
+### Pattern Detection (ICT)
+- 📍 **Fair Value Gaps (FVG)** - Automated detection with ICT-specific fields (premium/discount levels, consequent encroachment)
+- 💧 **Liquidity Pools (LP)** - EQH/EQL clusters, session levels (NYH, NYL, ASH, ASL, LSH, LSL), sweep detection
+- 📦 **Order Blocks (OB)** - Institutional order placement zones with quality classification and midpoint levels
 
-### Planned
-- 📋 Admin panel for superusers
-- 📋 ETL pipeline monitoring
-- 📋 SciChart integration (production)
-- 📋 Deployment to cloud VM
+### ETL & Data Pipeline
+- 🔄 **Real-time ETL Monitoring** - Job status tracking, progress indicators, log viewing
+- 📅 **Coverage Heatmap** - Visual data coverage across symbols and timeframes
+- 🗂️ **Multi-timeframe Support** - 1min, 5min, 15min, 30min, 1hr, 2hr, 4hr, daily, weekly
+- ✅ **Data Integrity Checks** - Gap detection, duplicate prevention, validation
+
+### Technical Stack
+- ⚡ **FastAPI + React** - Modern full-stack architecture
+- 🗄️ **PostgreSQL + TimescaleDB** - Optimized for time-series data
+- 🎨 **TailwindCSS + Radix UI** - Professional, accessible UI components
+- 🌍 **i18n Support** - English and Spanish translations
 
 ## 🔐 Environment Variables
 

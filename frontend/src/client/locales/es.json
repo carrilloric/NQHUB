@@ -73,16 +73,21 @@
   "nav": {
     "dashboard": "Panel Principal",
     "dataModule": "Módulo de Datos",
+    "dataModuleLabel": "MÓDULO DE DATOS",
     "dataIngest": "Ingesta de Datos & ETL",
     "dataCharts": "Gráficos",
     "dataAnalysis": "Análisis de Datos",
+    "statisticalAnalysis": "Análisis Estadístico",
     "backtesting": "Backtesting",
+    "backtestingRules": "Backtesting Basado en Reglas",
+    "backtestingAI": "Backtesting AI",
     "botModule": "Módulo BOT",
     "settings": "Configuración",
     "help": "Ayuda y Documentos",
     "profile": "Perfil",
     "logout": "Cerrar Sesión",
-    "userManagement": "Gestión de Usuarios"
+    "userManagement": "Gestión de Usuarios",
+    "invitations": "Invitaciones"
   },
   "common": {
     "save": "Guardar",

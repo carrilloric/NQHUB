@@ -11,7 +11,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:3004", // Using current dev server port
+    baseURL: "http://localhost:3001", // Using current dev server port
     trace: "on-first-retry",
     screenshot: "on", // Always capture screenshots
     video: "on", // Always record video for debugging
@@ -26,7 +26,7 @@ export default defineConfig({
 
   webServer: {
     command: "pnpm dev",
-    url: "http://localhost:3004", // Match baseURL
+    url: "http://localhost:3001", // Match baseURL
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

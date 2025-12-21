@@ -414,6 +414,70 @@ class ApiClient {
     return response.data;
   }
 
+  // ==================== Market State ====================
+
+  /**
+   * Generate market state snapshots for a time range
+   */
+  async generateMarketState(
+    request: import("@/types/patterns").MarketStateGenerateRequest
+  ): Promise<import("@/types/patterns").MarketStateGenerateResponse> {
+    const response = await this.client.post<import("@/types/patterns").MarketStateGenerateResponse>(
+      '/market-state/generate',
+      request
+    );
+    return response.data;
+  }
+
+  /**
+   * Get detailed market state with full pattern data for all 9 timeframes
+   */
+  async getMarketStateDetail(
+    symbol: string,
+    snapshot_time: string
+  ): Promise<import("@/types/patterns").MarketStateDetailResponse> {
+    const params = new URLSearchParams({
+      symbol,
+      snapshot_time
+    });
+    const response = await this.client.get<import("@/types/patterns").MarketStateDetailResponse>(
+      `/market-state/detail?${params}`
+    );
+    return response.data;
+  }
+
+  /**
+   * List available market state snapshots
+   */
+  async listMarketStateSnapshots(filters: {
+    symbol: string;
+    start_time?: string;
+    end_time?: string;
+    limit?: number;
+  }): Promise<import("@/types/patterns").MarketStateListResponse> {
+    const params = new URLSearchParams({ symbol: filters.symbol });
+    if (filters.start_time) params.append('start_time', filters.start_time);
+    if (filters.end_time) params.append('end_time', filters.end_time);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+
+    const response = await this.client.get<import("@/types/patterns").MarketStateListResponse>(
+      `/market-state/list?${params}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Get generation progress for a job
+   */
+  async getMarketStateProgress(
+    job_id: string
+  ): Promise<import("@/types/patterns").MarketStateProgressResponse> {
+    const response = await this.client.get<import("@/types/patterns").MarketStateProgressResponse>(
+      `/market-state/progress/${job_id}`
+    );
+    return response.data;
+  }
+
   // ==================== Error Handling Helpers ====================
 
   static isApiError(error: unknown): error is AxiosError<ApiError> {

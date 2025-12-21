@@ -12,6 +12,8 @@ This document describes the complete database schema for the NQHUB ETL system, d
 
 ### Table Summary
 
+#### Core Data Tables
+
 | Table Name | Type | Primary Purpose | Row Estimate |
 |------------|------|-----------------|--------------|
 | `market_data_ticks` | Hypertable | Raw tick-by-tick market data | Millions |
@@ -25,6 +27,24 @@ This document describes the complete database schema for the NQHUB ETL system, d
 | `candlestick_weekly` | Standard | Weekly aggregated candles | Tens |
 | `rollover_periods` | Standard | Futures contract rollover tracking | Dozens |
 | `processed_files` | Standard | ETL duplicate prevention | Hundreds |
+
+#### Pattern Detection Tables
+
+| Table Name | Type | Primary Purpose | Row Estimate |
+|------------|------|-----------------|--------------|
+| `detected_fvgs` | Standard | Fair Value Gap patterns (ICT) | Thousands |
+| `detected_liquidity_pools` | Standard | Liquidity Pool patterns (EQH/EQL, session levels) | Hundreds |
+| `detected_order_blocks` | Standard | Order Block patterns with quality classification | Thousands |
+| `pattern_interactions` | Standard | Pattern interaction tracking (pending) | Thousands |
+
+#### Authentication Tables
+
+| Table Name | Type | Primary Purpose | Row Estimate |
+|------------|------|-----------------|--------------|
+| `users` | Standard | User accounts | Dozens |
+| `invitations` | Standard | Invitation codes | Hundreds |
+| `password_reset_tokens` | Standard | Password reset functionality | Dozens |
+| `alembic_version` | Standard | Migration version tracking | 1 |
 
 ---
 
@@ -279,6 +299,290 @@ CREATE TABLE processed_files (
 
 ---
 
+## Pattern Detection Tables
+
+NQHUB includes automated detection of ICT (Inner Circle Trader) patterns stored in dedicated tables. See **PATTERN_DETECTION_GUIDE.md** for complete documentation.
+
+### 5. detected_fvgs
+
+**Purpose**: Store detected Fair Value Gaps (FVG) with ICT-specific fields.
+
+**Schema**:
+
+```sql
+CREATE TABLE detected_fvgs (
+    id                      SERIAL PRIMARY KEY,
+
+    -- Pattern identification
+    symbol                  VARCHAR(20) NOT NULL,
+    timeframe               VARCHAR(10) NOT NULL,
+    formation_time          TIMESTAMP WITHOUT TIME ZONE NOT NULL,  -- UTC naive
+
+    -- FVG boundaries
+    gap_low                 DOUBLE PRECISION NOT NULL,
+    gap_high                DOUBLE PRECISION NOT NULL,
+    gap_size                DOUBLE PRECISION NOT NULL,
+
+    -- ICT-specific levels
+    premium_level           DOUBLE PRECISION NOT NULL,   -- High boundary (resistance in bullish)
+    discount_level          DOUBLE PRECISION NOT NULL,   -- Low boundary (support in bullish)
+    consequent_encroachment DOUBLE PRECISION NOT NULL,   -- 50% level (most important retracement)
+
+    -- Pattern classification
+    fvg_type                VARCHAR(10) NOT NULL,        -- 'BULLISH' or 'BEARISH'
+    significance            VARCHAR(10) NOT NULL,        -- 'MICRO', 'SMALL', 'MEDIUM', 'LARGE', 'EXTREME'
+    displacement_score      DOUBLE PRECISION,            -- Energy of movement
+    has_break_of_structure  BOOLEAN DEFAULT false,       -- BOS indicator
+
+    -- State tracking
+    status                  VARCHAR(20) DEFAULT 'UNMITIGATED',  -- 'UNMITIGATED', 'REDELIVERED', 'REBALANCED'
+    last_checked_time       TIMESTAMP WITHOUT TIME ZONE,        -- UTC naive
+
+    -- Context
+    candle1_time            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    candle2_time            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    candle3_time            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+
+    -- Metadata
+    created_at              TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at              TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+```
+
+**Indexes**:
+- `idx_fvgs_symbol_tf` (btree on `symbol, timeframe`) - Pattern queries
+- `idx_fvgs_formation_time` (btree on `formation_time`) - Time-based filtering
+- `idx_fvgs_status` (btree on `status`) - Active pattern filtering
+- `idx_fvgs_significance` (btree on `significance`) - Quality filtering
+
+**Migration**: `20251204_2152-b8b739263c73_create_pattern_detection_tables.py`
+
+**ICT Fields Explained**:
+
+| Column | Type | Description | Example |
+|--------|------|-------------|---------|
+| `premium_level` | FLOAT | High boundary (acts as resistance in bullish FVG) | 20150.00 |
+| `discount_level` | FLOAT | Low boundary (acts as support in bullish FVG) | 20110.00 |
+| `consequent_encroachment` | FLOAT | 50% level (most important retracement target) | 20130.00 |
+| `displacement_score` | FLOAT | Energy indicator (larger gap = stronger displacement) | 42.5 |
+| `has_break_of_structure` | BOOLEAN | Indicates Break of Structure (BOS) presence | true |
+| `significance` | VARCHAR | Gap size classification (MICRO, SMALL, MEDIUM, LARGE, EXTREME) | LARGE |
+
+**State Transitions**:
+- **UNMITIGATED** → Gap not yet filled
+- **REDELIVERED** → Price returned to consequent encroachment (50% level)
+- **REBALANCED** → Gap fully filled
+
+---
+
+### 6. detected_liquidity_pools
+
+**Purpose**: Store detected Liquidity Pools (EQH/EQL clusters and session levels).
+
+**Schema**:
+
+```sql
+CREATE TABLE detected_liquidity_pools (
+    id                  SERIAL PRIMARY KEY,
+
+    -- Pattern identification
+    symbol              VARCHAR(20) NOT NULL,
+    timeframe           VARCHAR(10) NOT NULL,
+    formation_time      TIMESTAMP WITHOUT TIME ZONE NOT NULL,  -- UTC naive
+
+    -- Pool classification
+    pool_type           VARCHAR(10) NOT NULL,  -- 'EQH', 'EQL', 'NYH', 'NYL', 'ASH', 'ASL', 'LSH', 'LSL'
+
+    -- Rectangle representation
+    zone_low            DOUBLE PRECISION NOT NULL,
+    zone_high           DOUBLE PRECISION NOT NULL,
+    modal_level         DOUBLE PRECISION NOT NULL,  -- Most touched price level
+    start_time          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    end_time            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+
+    -- ICT lifecycle tracking
+    touch_count         INTEGER DEFAULT 0,
+    sweep_detected      BOOLEAN DEFAULT false,
+    sweep_time          TIMESTAMP WITHOUT TIME ZONE,
+    sweep_penetration   DOUBLE PRECISION,  -- Points beyond modal level
+
+    -- State tracking
+    status              VARCHAR(20) DEFAULT 'UNMITIGATED',  -- 'UNMITIGATED', 'RESPECTED', 'SWEPT', 'MITIGATED'
+    last_checked_time   TIMESTAMP WITHOUT TIME ZONE,
+
+    -- Metadata
+    created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+```
+
+**Indexes**:
+- `idx_lps_symbol_tf` (btree on `symbol, timeframe`) - Pattern queries
+- `idx_lps_pool_type` (btree on `pool_type`) - Pool type filtering
+- `idx_lps_status` (btree on `status`) - Active pool filtering
+- `idx_lps_formation_time` (btree on `formation_time`) - Time-based filtering
+
+**Migration**: `20251204_2152-b8b739263c73_create_pattern_detection_tables.py`
+
+**Pool Types**:
+
+| Type | Description | Formation |
+|------|-------------|-----------|
+| `EQH` | Equal Highs | 2+ highs within tolerance |
+| `EQL` | Equal Lows | 2+ lows within tolerance |
+| `NYH` | New York High | Highest point during NY session |
+| `NYL` | New York Low | Lowest point during NY session |
+| `ASH` | Asian Session High | Highest point during Asian session |
+| `ASL` | Asian Session Low | Lowest point during Asian session |
+| `LSH` | London Session High | Highest point during London session |
+| `LSL` | London Session Low | Lowest point during London session |
+
+**ICT Lifecycle**:
+1. **Formation**: Pool detected (EQH/EQL or session level)
+2. **Modal Level**: Price level with most touches
+3. **Sweep Detection**: 3 criteria check (penetration > 5pts, volume spike, reversal)
+4. **State Update**: SWEPT or remains UNMITIGATED
+
+**State Transitions**:
+- **UNMITIGATED** → Pool not yet swept
+- **RESPECTED** → Price bounced without sweeping
+- **SWEPT** → Stop-loss orders triggered (liquidity taken)
+- **MITIGATED** → Pool no longer relevant
+
+---
+
+### 7. detected_order_blocks
+
+**Purpose**: Store detected Order Blocks with quality classification and midpoint levels.
+
+**Schema**:
+
+```sql
+CREATE TABLE detected_order_blocks (
+    id                  SERIAL PRIMARY KEY,
+
+    -- Pattern identification
+    symbol              VARCHAR(20) NOT NULL,
+    timeframe           VARCHAR(10) NOT NULL,
+    formation_time      TIMESTAMP WITHOUT TIME ZONE NOT NULL,  -- UTC naive
+
+    -- Order Block boundaries
+    ob_high             DOUBLE PRECISION NOT NULL,
+    ob_low              DOUBLE PRECISION NOT NULL,
+    ob_open             DOUBLE PRECISION NOT NULL,
+    ob_close            DOUBLE PRECISION NOT NULL,
+
+    -- ICT midpoint levels
+    ob_body_midpoint    DOUBLE PRECISION NOT NULL,  -- (open + close) / 2
+    ob_range_midpoint   DOUBLE PRECISION NOT NULL,  -- (high + low) / 2
+
+    -- Classification
+    ob_type             VARCHAR(20) NOT NULL,  -- 'BULLISH', 'BEARISH', 'STRONG_BULLISH', 'STRONG_BEARISH'
+    quality             VARCHAR(10) NOT NULL,  -- 'HIGH', 'MEDIUM', 'LOW'
+
+    -- Impulse context
+    impulse_move        DOUBLE PRECISION NOT NULL,  -- Size of impulse in points
+    impulse_direction   VARCHAR(10) NOT NULL,       -- 'UP' or 'DOWN'
+
+    -- State tracking
+    status              VARCHAR(20) DEFAULT 'ACTIVE',  -- 'ACTIVE', 'TESTED', 'BROKEN'
+    last_checked_time   TIMESTAMP WITHOUT TIME ZONE,
+
+    -- Metadata
+    created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+```
+
+**Indexes**:
+- `idx_obs_symbol_tf` (btree on `symbol, timeframe`) - Pattern queries
+- `idx_obs_ob_type` (btree on `ob_type`) - Type filtering
+- `idx_obs_quality` (btree on `quality`) - Quality filtering
+- `idx_obs_status` (btree on `status`) - Active OB filtering
+- `idx_obs_formation_time` (btree on `formation_time`) - Time-based filtering
+
+**Migration**: `20251204_2152-b8b739263c73_create_pattern_detection_tables.py`
+
+**ICT Midpoints Explained**:
+
+| Column | Type | Description | Example |
+|--------|------|-------------|---------|
+| `ob_body_midpoint` | FLOAT | 50% of candle body = (open + close) / 2 | 20125.00 |
+| `ob_range_midpoint` | FLOAT | 50% of candle range = (high + low) / 2 | 20130.00 |
+
+**Quality Classification**:
+- **HIGH**: Strong impulse + large volume + tight range
+- **MEDIUM**: Moderate impulse
+- **LOW**: Minimum impulse threshold only
+
+**Order Block Types**:
+- **BULLISH OB**: Candle before upward impulse
+- **BEARISH OB**: Candle before downward impulse
+- **STRONG BULLISH OB**: Impulse > 1.5x minimum threshold
+- **STRONG BEARISH OB**: Impulse > 1.5x minimum threshold
+
+**State Transitions**:
+- **ACTIVE** → OB not yet tested by price
+- **TESTED** → Price returned to OB zone
+- **BROKEN** → Price decisively broke through OB
+
+---
+
+### 8. pattern_interactions
+
+**Purpose**: Track interactions between price and detected patterns (pending implementation).
+
+**Schema**:
+
+```sql
+CREATE TABLE pattern_interactions (
+    id                  SERIAL PRIMARY KEY,
+
+    -- Pattern reference
+    pattern_type        VARCHAR(20) NOT NULL,  -- 'FVG', 'LP', 'OB'
+    pattern_id          INTEGER NOT NULL,
+
+    -- Interaction details
+    symbol              VARCHAR(20) NOT NULL,
+    timeframe           VARCHAR(10) NOT NULL,
+    interaction_time    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    interaction_type    VARCHAR(20) NOT NULL,  -- 'R0', 'R1', 'R2', 'R3', 'R4', 'P1', 'P2', 'P3', 'P4', 'P5'
+
+    -- Penetration metrics
+    penetration_pct     DOUBLE PRECISION,      -- Percentage penetration
+    volume_spike        BOOLEAN DEFAULT false,
+    reversal_detected   BOOLEAN DEFAULT false,
+
+    -- Metadata
+    created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+```
+
+**Indexes**:
+- `idx_interactions_pattern` (btree on `pattern_type, pattern_id`) - Pattern lookup
+- `idx_interactions_type` (btree on `interaction_type`) - Interaction filtering
+- `idx_interactions_time` (btree on `interaction_time`) - Time-based queries
+
+**Migration**: `20251204_2152-b8b739263c73_create_pattern_detection_tables.py`
+
+**Interaction Types** (see `REBOTE_Y_PENETRACION_CRITERIOS.md`):
+
+**Bounce Levels (R0-R4)**:
+- **R0**: Clean bounce (0% penetration)
+- **R1**: Shallow touch (0.1-10% penetration)
+- **R2**: Moderate retest (10-25% penetration)
+- **R3**: Deep retest (25-50% penetration)
+- **R4**: Full retest (50-90% penetration)
+
+**Penetration Levels (P1-P5)**:
+- **P1**: Minor break (90-110% penetration)
+- **P2**: Moderate break (110-150%)
+- **P3**: Strong break (150-200%)
+- **P4**: False breakout (>200% but reverses)
+- **P5**: Clean break (>200% sustained)
+
+---
+
 ## Authentication Tables
 
 The database also includes authentication tables created in earlier migrations:
@@ -402,6 +706,16 @@ ORDER BY first_date DESC;
 | b215073e64fd | Create market_data_ticks table | 2025-11-02 | `20251102_0904-b215073e64fd_create_market_data_ticks_table.py` |
 | 0cac37df50d1 | Create candlestick tables | 2025-11-02 | `20251102_0904-0cac37df50d1_create_candlestick_tables.py` |
 | c32f6b61196a | Create auxiliary tables | 2025-11-02 | `20251102_0905-c32f6b61196a_create_auxiliary_tables.py` |
+| 0ab4b7e66309 | Create ETL jobs and candle coverage tables | 2025-11-02 | `20251102_0948-0ab4b7e66309_create_etl_jobs_and_candle_coverage.py` |
+| 73668c471717 | Create ETL job logs table | 2025-11-02 | `20251102_1640-73668c471717_create_etl_job_logs_table.py` |
+| d207e6ad07eb | Add detailed progress fields to ETL jobs | 2025-11-02 | `20251102_1641-d207e6ad07eb_add_detailed_progress_fields_to_etl_jobs.py` |
+| 1999c1774198 | Add status_detail to ETL jobs | 2025-11-02 | `20251102_1740-1999c1774198_add_status_detail_to_etl_jobs.py` |
+| f1a8f69db2a6 | Create active contracts table | 2025-11-03 | `20251103_1438-f1a8f69db2a6_create_active_contracts_table.py` |
+| 8ab5a70c73df | Add tick hash for duplicate prevention | 2025-11-04 | `20251104_1354-8ab5a70c73df_add_tick_hash_for_duplicate_prevention.py` |
+| d494630c6cc3 | Add detailed progress tracking fields | 2025-11-04 | `20251104_1405-d494630c6cc3_add_detailed_progress_tracking_fields.py` |
+| b8b739263c73 | **Create pattern detection tables** | 2025-12-04 | `20251204_2152-b8b739263c73_create_pattern_detection_tables.py` |
+| 2b8f3542b490 | Add ICT fields to detected FVGs | 2025-12-09 | `20251209_1630-2b8f3542b490_add_ict_fields_to_detected_fvgs.py` |
+| 8f06482e1048 | Add last_checked_time to detected FVGs | 2025-12-09 | `20251209_1654-8f06482e1048_add_last_checked_time_to_detected_fvgs.py` |
 
 ---
 
@@ -414,10 +728,11 @@ ORDER BY first_date DESC;
 - Docker Container: nqhub_postgres
 - Image: timescale/timescaledb:latest-pg15
 
-**Current State** (as of 2025-11-02):
-- Total Tables: 15
+**Current State** (as of 2025-12-12):
+- Total Tables: 23+ (core data + pattern detection + ETL + authentication)
 - Hypertables: 1 (market_data_ticks)
-- Data Size: 0 KB (schema only, no data yet)
+- Pattern Detection: FVG, Liquidity Pools, Order Blocks
+- Data Size: Growing (production data being ingested)
 
 ---
 
@@ -437,12 +752,28 @@ Planned improvements for future phases:
 
 For more information, see:
 
+### Core Data
 - `_reference/docs/DATA_DICTIONARY.md` - Human-readable data structure guide
 - `_reference/docs/database_metadata.json` - Legacy database schema reference
 - `_reference/docs/csv_format_metadata.json` - Databento CSV format specifications
 - `_reference/docs/LEGACY_DATABASE_SCHEMA.md` - Legacy system analysis
 
+### Pattern Detection
+- **`docs/PATTERN_DETECTION_GUIDE.md`** - Complete Pattern Detection System guide
+- `docs/FVG_CRITERIOS_DETECCION.md` - FVG detection criteria
+- `docs/FVG_TEORIA_ICT.md` - FVG theory and ICT concepts
+- `docs/DETECCION_FAIR_VALUE_GAPS.md` - FVG implementation details
+- `docs/LIQUIDITY_POOLS_CRITERIOS.md` - Liquidity Pool detection criteria
+- `docs/LIQUIDITY_POOL_STATES.md` - LP lifecycle and state transitions
+- `docs/ORDER_BLOCKS_CRITERIOS.md` - Order Block detection criteria
+- `docs/REBOTE_Y_PENETRACION_CRITERIOS.md` - Pattern interaction classification
+
+### Architecture
+- `CLAUDE.md` - Complete architecture guide
+- `README.md` - Project overview and features
+- `docs/SIDEBAR_NAVIGATION.md` - Navigation structure
+
 ---
 
 **Generated by**: Claude Code
-**Last Updated**: 2025-11-02
+**Last Updated**: 2025-12-12

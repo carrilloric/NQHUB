@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     # Anthropic
     ANTHROPIC_API_KEY: str | None = None
 
+    # Google AI (Gemini)
+    GOOGLE_API_KEY: str | None = None
+
     # Groq (for Llama)
     GROQ_API_KEY: str | None = None
 

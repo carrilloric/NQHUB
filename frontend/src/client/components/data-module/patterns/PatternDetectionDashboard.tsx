@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FVGDetector } from "./FVGDetector";
 import { LiquidityPoolDetector } from "./LiquidityPoolDetector";
+import { SessionLevelDetector } from "./SessionLevelDetector";
 import { OrderBlockDetector } from "./OrderBlockDetector";
 
-type PatternTab = "fvg" | "lp" | "ob";
+type PatternTab = "fvg" | "lp" | "sl" | "ob";
 
 export const PatternDetectionDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PatternTab>("fvg");
@@ -19,12 +20,15 @@ export const PatternDetectionDashboard: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PatternTab)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="fvg" data-testid="fvg-tab">
             Fair Value Gaps
           </TabsTrigger>
           <TabsTrigger value="lp" data-testid="lp-tab">
             Liquidity Pools
+          </TabsTrigger>
+          <TabsTrigger value="sl" data-testid="sl-tab">
+            Session Levels
           </TabsTrigger>
           <TabsTrigger value="ob" data-testid="ob-tab">
             Order Blocks
@@ -37,6 +41,10 @@ export const PatternDetectionDashboard: React.FC = () => {
 
         <TabsContent value="lp" className="space-y-4">
           <LiquidityPoolDetector />
+        </TabsContent>
+
+        <TabsContent value="sl" className="space-y-4">
+          <SessionLevelDetector />
         </TabsContent>
 
         <TabsContent value="ob" className="space-y-4">

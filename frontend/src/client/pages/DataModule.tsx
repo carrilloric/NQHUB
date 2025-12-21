@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DataIngestETLSection } from "@/components/data-module/DataIngestETLSection";
 import { ChartsSection } from "@/components/data-module/ChartsSection";
-import { DataAnalysisSection } from "@/components/data-module/DataAnalysisSection";
 import { PatternDetectionSection } from "@/components/data-module/PatternDetectionSection";
-import { ChatWorkspaceAside } from "@/components/dashboard/ChatWorkspaceAside";
+import { MarketStateSection } from "@/components/data-module/market-state/MarketStateSection";
+import { AssistantPanelSidebar } from "@/assistant";
 import { useI18n } from "@/state/app";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type DataModuleTab = "ingest" | "charts" | "analysis" | "patterns";
+type DataModuleTab = "ingest" | "charts" | "patterns" | "market-state";
 
 interface DataModuleProps {
   defaultTab?: DataModuleTab;
@@ -55,7 +55,7 @@ export const DataModule: React.FC<DataModuleProps> = ({
                     </TabsTrigger>
                     <TabsTrigger value="charts">📊 Charts</TabsTrigger>
                     <TabsTrigger value="patterns">🔍 Pattern Detection</TabsTrigger>
-                    <TabsTrigger value="analysis">📈 Data Analysis</TabsTrigger>
+                    <TabsTrigger value="market-state">📸 Market State</TabsTrigger>
                   </TabsList>
 
                   <div className="flex-1 overflow-hidden">
@@ -81,10 +81,10 @@ export const DataModule: React.FC<DataModuleProps> = ({
                     </TabsContent>
 
                     <TabsContent
-                      value="analysis"
+                      value="market-state"
                       className="flex h-full flex-col overflow-auto px-6 pb-8 pt-6"
                     >
-                      <DataAnalysisSection />
+                      <MarketStateSection />
                     </TabsContent>
                   </div>
                 </Tabs>
@@ -92,7 +92,7 @@ export const DataModule: React.FC<DataModuleProps> = ({
             </div>
           </div>
         </div>
-        <ChatWorkspaceAside />
+        <AssistantPanelSidebar />
       </main>
     </div>
   );

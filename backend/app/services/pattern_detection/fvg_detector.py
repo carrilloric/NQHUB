@@ -488,13 +488,13 @@ class FVGDetector:
 
     def _format_et_time(self, utc_time: datetime) -> str:
         """
-        Convert UTC datetime to Eastern Time (EST/EDT) string
+        Convert UTC datetime to Eastern Time (EST/EDT) string with date and UTC time
 
         Args:
             utc_time: UTC datetime object
 
         Returns:
-            Formatted time string with timezone (e.g., "14:30:00 EST" or "15:30:00 EDT")
+            Formatted time string with date, timezone, and UTC (e.g., "2024-11-06 14:30:00 EST (19:30:00 UTC)")
         """
         eastern = pytz.timezone('US/Eastern')
         # Ensure utc_time has UTC timezone info
@@ -507,7 +507,12 @@ class FVGDetector:
         # Get timezone abbreviation (EST or EDT)
         tz_abbr = et_time.strftime('%Z')
 
-        return et_time.strftime(f'%H:%M:%S {tz_abbr}')
+        # Format: YYYY-MM-DD HH:MM:SS TZ (HH:MM:SS UTC)
+        date_str = et_time.strftime('%Y-%m-%d')
+        time_str = et_time.strftime('%H:%M:%S')
+        utc_time_str = utc_time.strftime('%H:%M:%S')
+
+        return f"{date_str} {time_str} {tz_abbr} ({utc_time_str} UTC)"
 
     def generate_text_report(
         self,

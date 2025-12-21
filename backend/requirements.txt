@@ -45,3 +45,12 @@ rq==1.15.1  # Python RQ (Redis Queue) - simpler alternative to Celery
 pytz==2024.1
 zstandard==0.22.0  # Decompress .zst files from Databento
 psutil==5.9.5
+
+# AI Assistant
+anthropic==0.39.0  # Claude API
+google-generativeai==0.8.3  # Gemini
+mem0ai==0.1.24  # Memory for AI agents
+langgraph==0.2.45  # Orchestration
+langchain==0.3.7  # For SQL agent utilities
+vanna[chromadb,anthropic]==0.8.7  # NL to SQL with RAG
+chromadb==0.5.18  # Vector DB for Vanna

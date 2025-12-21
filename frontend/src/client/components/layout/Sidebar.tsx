@@ -2,13 +2,14 @@ import React from "react";
 import { useAuth, useI18n, useUI } from "@/state/app";
 import {
   Bot,
-  FlaskConical,
+  Brain,
+  Calculator,
+  FileCode,
   HelpCircle,
   Home,
   LayoutDashboard,
   LineChart,
   Settings as Cog,
-  Sigma,
   TrendingUp,
   Mail,
 } from "lucide-react";
@@ -22,42 +23,42 @@ export const Sidebar: React.FC = () => {
 
   const items = [
     { to: "/dashboard", icon: Home, label: t("nav.dashboard"), visible: true },
+    // Data Module section (with visual grouping)
     {
       to: "/data",
       icon: TrendingUp,
-      label: t("nav.dataIngest"),
+      label: t("nav.dataModule"),
+      visible: true,
+      groupLabel: t("nav.dataModuleLabel"),
+    },
+    // Statistical Analysis (independent section)
+    {
+      to: "/statistical-analysis",
+      icon: Calculator,
+      label: t("nav.statisticalAnalysis"),
+      visible: true,
+    },
+    // Backtesting sections
+    {
+      to: "/backtesting/rule-based",
+      icon: FileCode,
+      label: t("nav.backtestingRules"),
       visible: true,
     },
     {
-      to: "/data/charts",
-      icon: LineChart,
-      label: t("nav.dataCharts"),
+      to: "/backtesting/ai",
+      icon: Brain,
+      label: t("nav.backtestingAI"),
       visible: true,
     },
-    {
-      to: "/data/analysis",
-      icon: Sigma,
-      label: t("nav.dataAnalysis"),
-      visible: true,
-    },
-    {
-      to: "/backtesting",
-      icon: FlaskConical,
-      label: t("nav.backtesting"),
-      visible: user?.role !== "admin" ? true : true,
-    },
+    // BOT Module
     {
       to: "/bot",
       icon: Bot,
       label: t("nav.botModule"),
       visible: user?.role === "trader" || user?.role === "admin",
     },
-    {
-      to: "/invitations",
-      icon: Mail,
-      label: "Invitations",
-      visible: user?.role === "admin",
-    },
+    // Settings and Help
     { to: "/settings", icon: Cog, label: t("nav.settings"), visible: true },
     { to: "/help", icon: HelpCircle, label: t("nav.help"), visible: true },
   ];
@@ -73,43 +74,51 @@ export const Sidebar: React.FC = () => {
         <nav className="px-3 pb-4 pt-5 space-y-1">
           {items
             .filter((i) => i.visible)
-            .map(({ to, icon: Icon, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn(
-                    "group relative flex items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-all",
-                    isActive
-                      ? "border border-primary/40 bg-primary/10 text-foreground shadow-inner"
-                      : "border border-transparent text-muted-foreground/80 hover:border-primary/30 hover:bg-sidebar-accent/60 hover:text-foreground",
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <span
-                      className={cn(
-                        "pointer-events-none absolute left-2 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full bg-primary/80 transition-opacity",
-                        isActive
-                          ? "opacity-100"
-                          : "opacity-0 group-hover:opacity-50",
-                      )}
-                    />
-                    <Icon
-                      className={cn(
-                        "size-5 flex-shrink-0 transition-colors",
-                        isActive
-                          ? "text-primary"
-                          : "text-muted-foreground/70 group-hover:text-foreground",
-                      )}
-                    />
-                    {!ui.sidebarCollapsed && (
-                      <span className="truncate">{label}</span>
-                    )}
-                  </>
+            .map(({ to, icon: Icon, label, groupLabel }) => (
+              <React.Fragment key={to}>
+                {/* Group Label */}
+                {groupLabel && !ui.sidebarCollapsed && (
+                  <div className="mt-4 mb-2 px-3 text-[0.6rem] font-bold uppercase tracking-[0.3em] text-muted-foreground/50">
+                    {groupLabel}
+                  </div>
                 )}
-              </NavLink>
+                {/* Nav Link */}
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      "group relative flex items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-all",
+                      isActive
+                        ? "border border-primary/40 bg-primary/10 text-foreground shadow-inner"
+                        : "border border-transparent text-muted-foreground/80 hover:border-primary/30 hover:bg-sidebar-accent/60 hover:text-foreground",
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={cn(
+                          "pointer-events-none absolute left-2 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full bg-primary/80 transition-opacity",
+                          isActive
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-50",
+                        )}
+                      />
+                      <Icon
+                        className={cn(
+                          "size-5 flex-shrink-0 transition-colors",
+                          isActive
+                            ? "text-primary"
+                            : "text-muted-foreground/70 group-hover:text-foreground",
+                        )}
+                      />
+                      {!ui.sidebarCollapsed && (
+                        <span className="truncate">{label}</span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              </React.Fragment>
             ))}
           {user?.role === "admin" && (
             <>
@@ -177,7 +186,7 @@ export const Sidebar: React.FC = () => {
                           : "text-muted-foreground/70 group-hover:text-foreground",
                       )}
                     />
-                    {!ui.sidebarCollapsed && <span>Invitations</span>}
+                    {!ui.sidebarCollapsed && <span>{t("nav.invitations")}</span>}
                   </>
                 )}
               </NavLink>

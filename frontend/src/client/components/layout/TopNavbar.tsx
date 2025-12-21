@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { useAuth, useI18n, useUI } from "@/state/app";
-import { Bell, ChevronDown, Globe, Languages, LogOut, Moon, Settings, Sun, User } from "lucide-react";
+import { Bell, ChevronDown, Database, Globe, Languages, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VannaStatsModal } from "@/components/assistant/VannaStatsModal";
 
 export const TopNavbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const ui = useUI();
+  const [vannaModalOpen, setVannaModalOpen] = useState(false);
 
   const toggleTheme = () => ui.setTheme(ui.theme === "dark" ? "light" : "dark");
 
@@ -31,6 +33,9 @@ export const TopNavbar: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <ToolbarIcon onClick={() => setVannaModalOpen(true)} aria-label="Vanna Stats">
+            <Database className="size-4" />
+          </ToolbarIcon>
           <ToolbarIcon onClick={() => ui.setLlmPanelOpen(!ui.llmPanelOpen)} aria-label="Toggle LLM">
             <Globe className="size-4" />
           </ToolbarIcon>
@@ -75,6 +80,7 @@ export const TopNavbar: React.FC = () => {
           )}
         </div>
       </div>
+      <VannaStatsModal open={vannaModalOpen} onOpenChange={setVannaModalOpen} />
     </header>
   );
 };

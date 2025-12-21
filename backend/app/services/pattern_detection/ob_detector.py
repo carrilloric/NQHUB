@@ -275,15 +275,30 @@ class OrderBlockDetector:
 
         # Convert to DetectedOrderBlock objects
         obs = []
+        eastern = pytz.timezone('America/New_York')
+
         for row in result:
             if row.ob_type is None:
                 continue
+
+            # Ensure formation_time is timezone-aware (ET)
+            formation_time = row.formation_time
+            if formation_time.tzinfo is None:
+                # If naive, assume it's already in ET (from AT TIME ZONE)
+                formation_time = eastern.localize(formation_time)
+            else:
+                # If already timezone-aware, convert to ET
+                formation_time = formation_time.astimezone(eastern)
 
             # Determine impulse direction
             impulse_direction = "UP" if row.impulse_move > 0 else "DOWN"
 
             # Calculate candle range
             candle_range = float(row.ob_high - row.ob_low)
+
+            # Calculate midpoints
+            ob_body_midpoint = (float(row.ob_open) + float(row.ob_close)) / 2.0
+            ob_range_midpoint = (float(row.ob_high) + float(row.ob_low)) / 2.0
 
             # Evaluate quality
             quality = self.evaluate_quality(
@@ -297,13 +312,15 @@ class OrderBlockDetector:
             ob = DetectedOrderBlock(
                 symbol=symbol,
                 timeframe=timeframe,
-                formation_time=row.formation_time,
+                formation_time=formation_time.astimezone(pytz.UTC).replace(tzinfo=None),  # Convert to UTC naive for DB
                 ob_type=row.ob_type,
                 ob_high=row.ob_high,
                 ob_low=row.ob_low,
                 ob_open=row.ob_open,
                 ob_close=row.ob_close,
                 ob_volume=row.ob_volume,
+                ob_body_midpoint=ob_body_midpoint,
+                ob_range_midpoint=ob_range_midpoint,
                 impulse_move=row.impulse_move,
                 impulse_direction=impulse_direction,
                 candle_direction=row.candle_direction,
@@ -369,13 +386,13 @@ class OrderBlockDetector:
 
     def _format_et_time(self, utc_time: datetime) -> str:
         """
-        Convert UTC datetime to Eastern Time (EST/EDT) string
+        Convert UTC datetime to Eastern Time (EST/EDT) string with date and UTC time
 
         Args:
             utc_time: UTC datetime object
 
         Returns:
-            Formatted time string with timezone (e.g., "14:30 EST" or "15:30 EDT")
+            Formatted time string with date, timezone, and UTC (e.g., "2024-11-06 14:30:00 EST (19:30:00 UTC)")
         """
         eastern = pytz.timezone('US/Eastern')
         # Ensure utc_time has UTC timezone info
@@ -388,7 +405,12 @@ class OrderBlockDetector:
         # Get timezone abbreviation (EST or EDT)
         tz_abbr = et_time.strftime('%Z')
 
-        return et_time.strftime(f'%H:%M {tz_abbr}')
+        # Format: YYYY-MM-DD HH:MM:SS TZ (HH:MM:SS UTC)
+        date_str = et_time.strftime('%Y-%m-%d')
+        time_str = et_time.strftime('%H:%M:%S')
+        utc_time_str = utc_time.strftime('%H:%M:%S')
+
+        return f"{date_str} {time_str} {tz_abbr} ({utc_time_str} UTC)"
 
     def generate_text_report(
         self,
@@ -457,6 +479,10 @@ OB Candle:
   Low:   {ob.ob_low:.2f}
   Close: {ob.ob_close:.2f}
   Range: {ob.ob_high - ob.ob_low:.2f} pts
+
+  Body Midpoint (50%):  {ob.ob_body_midpoint:.2f}
+  Range Midpoint (50%): {ob.ob_range_midpoint:.2f}
+
   Volume: {ob.ob_volume:.0f} contratos
 
 Impulso:

@@ -78,13 +78,15 @@ class LiquidityPoolDetectionRequest(BaseModel):
 
 
 class LiquidityPoolResponse(BaseModel):
-    """Single Liquidity Pool response"""
+    """Single Liquidity Pool response - represents LP as a rectangle"""
     lp_id: int
     symbol: str
     timeframe: str
     formation_time: datetime
     pool_type: str  # EQH, EQL, TH, TL, SWING_HIGH, SWING_LOW, ASH, ASL, LSH, LSL, NYH, NYL
     level: float
+    zone_low: Optional[float] = None  # Rectangle bottom (for EQH/EQL)
+    zone_high: Optional[float] = None  # Rectangle top (for EQH/EQL)
     tolerance: float
     touch_times: Optional[List[datetime]]
     num_touches: int
@@ -92,6 +94,26 @@ class LiquidityPoolResponse(BaseModel):
     strength: str  # STRONG, NORMAL, WEAK
     status: str  # UNMITIGATED, RESPECTED, SWEPT, MITIGATED
     created_at: datetime
+
+    # Rectangle representation fields (computed from touch_times)
+    start_time: Optional[datetime] = None  # Rectangle start (first touch)
+    end_time: Optional[datetime] = None    # Rectangle end (last touch)
+    liquidity_type: Optional[str] = None   # "Buy-Side Liquidity" or "Sell-Side Liquidity"
+    zone_size: Optional[float] = None      # Rectangle height in points
+
+    # Modal level fields (ICT-aligned representation)
+    modal_level: Optional[float] = None    # The price level with most touches
+    modal_touches: Optional[int] = None    # Number of touches at modal level
+    spread: Optional[float] = None         # Dispersion around modal (in pts)
+
+    # Ranking and freshness fields
+    importance_score: Optional[float] = None  # Composite ranking metric
+    time_freshness: Optional[float] = None    # Hours since last touch
+    distance_to_current_price: Optional[float] = None  # Distance in points from current price
+
+    # Sweep detection (ICT lifecycle)
+    sweep_status: Optional[str] = None  # INTACT or SWEPT
+    sweep_criteria_met: Optional[int] = None  # Number of criteria met (0-3)
 
     class Config:
         from_attributes = True
@@ -130,6 +152,8 @@ class OrderBlockResponse(BaseModel):
     ob_open: float
     ob_close: float
     ob_volume: float
+    ob_body_midpoint: float  # 50% of body (open+close)/2
+    ob_range_midpoint: float  # 50% of range (high+low)/2
     impulse_move: float
     impulse_direction: str  # UP, DOWN
     candle_direction: str  # BULLISH, BEARISH
@@ -214,3 +238,102 @@ class OrderBlockListResponse(BaseModel):
     """Response for OB list endpoint"""
     total: int
     order_blocks: List[OrderBlockResponse]
+
+
+# ============================================================================
+# Market State Schemas
+# ============================================================================
+
+class MarketStateGenerateRequest(BaseModel):
+    """Request to generate market state snapshots"""
+    symbol: str = Field(..., example="NQZ5")
+    start_time: datetime = Field(..., example="2025-11-24T09:00:00")
+    end_time: datetime = Field(..., example="2025-11-24T16:00:00")
+    interval_minutes: int = Field(default=5, ge=1, le=60, example=5)
+
+
+class TimeframeSummary(BaseModel):
+    """Summary for a single timeframe"""
+    active_fvgs_count: int
+    active_lps_count: int
+    active_obs_count: int
+    bullish_count: int
+    bearish_count: int
+
+
+class TimeframeData(BaseModel):
+    """Complete data for a single timeframe"""
+    summary: TimeframeSummary
+    active_fvgs: List[FVGResponse]
+    active_session_levels: List[LiquidityPoolResponse]
+    active_obs: List[OrderBlockResponse]
+
+
+class MarketStateSummary(BaseModel):
+    """Overall market state summary across all timeframes"""
+    total_patterns_all_timeframes: int
+    by_timeframe: dict  # {"30s": 3, "1min": 8, "5min": 12, ...}
+
+
+class MarketStateDetailResponse(BaseModel):
+    """Detailed market state response with full pattern data for all timeframes"""
+    snapshot_time: datetime
+    snapshot_time_est: str  # Formatted display: "2025-11-24 04:30:00 EST"
+    symbol: str
+    summary: MarketStateSummary
+    timeframes: dict  # {"30s": TimeframeData, "1min": TimeframeData, ...}
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "snapshot_time": "2025-11-24T09:30:00",
+                "snapshot_time_est": "2025-11-24 04:30:00 EST",
+                "symbol": "NQZ5",
+                "summary": {
+                    "total_patterns_all_timeframes": 95,
+                    "by_timeframe": {
+                        "30s": 3,
+                        "1min": 8,
+                        "5min": 12,
+                        "15min": 10,
+                        "30min": 15,
+                        "1hr": 18,
+                        "4hr": 12,
+                        "daily": 8,
+                        "weekly": 4
+                    }
+                },
+                "timeframes": {
+                    "5min": {
+                        "summary": {
+                            "active_fvgs_count": 5,
+                            "active_lps_count": 3,
+                            "active_obs_count": 4,
+                            "bullish_count": 6,
+                            "bearish_count": 6
+                        },
+                        "active_fvgs": [],
+                        "active_session_levels": [],
+                        "active_obs": []
+                    }
+                }
+            }
+        }
+
+
+class MarketStateSnapshotInfo(BaseModel):
+    """Basic snapshot information without full pattern details"""
+    snapshot_time: datetime
+    snapshot_time_est: str
+    total_patterns: int
+    by_timeframe: dict
+
+
+class MarketStateGenerateResponse(BaseModel):
+    """Response after generating snapshots"""
+    job_id: str
+    total_snapshots: int
+    symbol: str
+    start_time: datetime
+    end_time: datetime
+    snapshots: List[MarketStateSnapshotInfo]

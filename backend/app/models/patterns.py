@@ -8,9 +8,9 @@ from datetime import datetime
 from typing import List, Optional
 from sqlalchemy import (
     Column, Integer, String, Float, DateTime, ARRAY, Boolean,
-    Index, func
+    Index, func, UniqueConstraint
 )
-from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY, JSONB
 from app.db.session import Base
 
 
@@ -63,6 +63,8 @@ class DetectedLiquidityPool(Base):
     formation_time = Column(DateTime(timezone=True), nullable=False)
     pool_type = Column(String(15), nullable=False)  # EQH, EQL, TH, TL, SWING_HIGH, SWING_LOW, ASH, ASL, LSH, LSL, NYH, NYL
     level = Column(Float, nullable=False)
+    zone_low = Column(Float, nullable=True)  # For EQH/EQL pools (zones), NULL for session levels
+    zone_high = Column(Float, nullable=True)  # For EQH/EQL pools (zones), NULL for session levels
     tolerance = Column(Float, nullable=False, server_default="10.0")
     touch_times = Column(PG_ARRAY(DateTime(timezone=True)))
     num_touches = Column(Integer, nullable=False, server_default="1")
@@ -95,6 +97,8 @@ class DetectedOrderBlock(Base):
     ob_open = Column(Float, nullable=False)
     ob_close = Column(Float, nullable=False)
     ob_volume = Column(Float, nullable=False)
+    ob_body_midpoint = Column(Float, nullable=False)  # 50% of body (open+close)/2
+    ob_range_midpoint = Column(Float, nullable=False)  # 50% of range (high+low)/2
     impulse_move = Column(Float, nullable=False)
     impulse_direction = Column(String(10), nullable=False)  # UP, DOWN
     candle_direction = Column(String(10), nullable=False)  # BULLISH, BEARISH
@@ -142,3 +146,37 @@ class PatternInteraction(Base):
 
     def __repr__(self):
         return f"<Interaction {self.pattern_type}#{self.pattern_id} {self.interaction_type} @ {self.interaction_time}>"
+
+
+class MarketStateSnapshot(Base):
+    """
+    Market State Snapshot - aggregated view of active patterns across all timeframes at a specific timestamp
+
+    Stores snapshot of market state showing all active patterns (FVG, LP, OB) for all 9 timeframes.
+    Uses JSONB column 'timeframe_breakdown' to store IDs and counts per timeframe.
+    """
+    __tablename__ = "market_state_snapshots"
+
+    snapshot_id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String(20), nullable=False)
+    snapshot_time = Column(DateTime(timezone=False), nullable=False)  # UTC naive (standard)
+    total_patterns_all_timeframes = Column(Integer, nullable=False, server_default="0")
+
+    # JSONB structure:
+    # {
+    #   "30s": {"active_fvgs_count": 1, "active_lps_count": 0, "active_obs_count": 2, "active_fvg_ids": [95], ...},
+    #   "1min": {"active_fvgs_count": 2, ...},
+    #   ...
+    # }
+    timeframe_breakdown = Column(JSONB, nullable=True)
+
+    created_at = Column(DateTime(timezone=False), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('symbol', 'snapshot_time', name='uq_snapshot'),
+        Index('idx_snapshots_symbol_time', 'symbol', 'snapshot_time'),
+        Index('idx_snapshots_time', 'snapshot_time'),
+    )
+
+    def __repr__(self):
+        return f"<MarketStateSnapshot {self.symbol} @ {self.snapshot_time} total={self.total_patterns_all_timeframes}>"

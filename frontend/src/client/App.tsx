@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import DataModule from "./pages/DataModule";
+import StatisticalAnalysis from "./pages/StatisticalAnalysis";
 import WithLayout from "./pages/Placeholders";
 import ChartTest from "./pages/ChartTest";
 import { AppProvider, useAuth, Role } from "@/state/app";
@@ -82,18 +83,26 @@ const App = () => (
               }
             />
             <Route
-              path="/data/analysis"
+              path="/statistical-analysis"
               element={
                 <ProtectedRoute>
-                  <DataModule defaultTab="analysis" />
+                  <StatisticalAnalysis />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/backtesting"
+              path="/backtesting/rule-based"
               element={
                 <ProtectedRoute>
-                  <WithLayout title="Backtesting Module" />
+                  <WithLayout title="Backtesting Rule-Based" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/backtesting/ai"
+              element={
+                <ProtectedRoute>
+                  <WithLayout title="Backtesting AI" />
                 </ProtectedRoute>
               }
             />
