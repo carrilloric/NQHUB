@@ -49,6 +49,10 @@ class MarketStateSnapshotGenerator:
         Returns:
             MarketStateSnapshot with timeframe_breakdown populated
         """
+        # IMPORTANT: Update OB states BEFORE generating snapshot
+        # This ensures BROKEN OBs are not counted as ACTIVE
+        await self._update_all_ob_states(symbol, snapshot_time)
+
         timeframe_breakdown = {}
         total_patterns = 0
 
@@ -317,3 +321,40 @@ class MarketStateSnapshotGenerator:
             },
             'timeframes': timeframes_data
         }
+
+    async def _update_all_ob_states(
+        self,
+        symbol: str,
+        up_to_time: datetime  # UTC naive
+    ) -> None:
+        """
+        Update Order Block states for all timeframes before generating snapshot
+
+        This method calls update_ob_states() for each timeframe to ensure
+        BROKEN OBs are not counted as ACTIVE in the snapshot.
+
+        Args:
+            symbol: Trading symbol
+            up_to_time: Check price action up to this time (UTC naive)
+        """
+        from app.db.session import SessionLocal
+        from app.services.pattern_detection import OrderBlockDetector
+
+        # Convert to UTC aware for OB detector
+        up_to_time_utc = up_to_time.replace(tzinfo=pytz.UTC) if up_to_time.tzinfo is None else up_to_time.astimezone(pytz.UTC)
+
+        # Use synchronous DB session for OB detector
+        # OB detector uses sync Session, AsyncSession cannot be used
+        sync_db = SessionLocal()
+        try:
+            detector = OrderBlockDetector(sync_db)
+
+            # Update OB states for each timeframe
+            for tf in TIMEFRAMES:
+                detector.update_ob_states(
+                    symbol=symbol,
+                    timeframe=tf,
+                    up_to_time=up_to_time_utc
+                )
+        finally:
+            sync_db.close()

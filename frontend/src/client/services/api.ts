@@ -478,6 +478,21 @@ class ApiClient {
     return response.data;
   }
 
+  // ==================== Audit ====================
+
+  /**
+   * Generate Order Blocks audit report
+   */
+  async generateOrderBlocksAudit(
+    request: import("@/types/audit").AuditOrderBlocksRequest
+  ): Promise<import("@/types/audit").AuditOrderBlocksResponse> {
+    const response = await this.client.post<import("@/types/audit").AuditOrderBlocksResponse>(
+      `/audit/order-blocks`,
+      request
+    );
+    return response.data;
+  }
+
   // ==================== Error Handling Helpers ====================
 
   static isApiError(error: unknown): error is AxiosError<ApiError> {

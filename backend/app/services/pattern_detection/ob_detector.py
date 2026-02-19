@@ -309,10 +309,14 @@ class OrderBlockDetector:
                 strong_threshold=strong_threshold
             )
 
+            # Get current time for lifecycle tracking
+            now_utc = datetime.now(pytz.UTC).replace(tzinfo=None)  # UTC naive for DB
+            formation_time_utc_naive = formation_time.astimezone(pytz.UTC).replace(tzinfo=None)
+
             ob = DetectedOrderBlock(
                 symbol=symbol,
                 timeframe=timeframe,
-                formation_time=formation_time.astimezone(pytz.UTC).replace(tzinfo=None),  # Convert to UTC naive for DB
+                formation_time=formation_time_utc_naive,  # Convert to UTC naive for DB
                 ob_type=row.ob_type,
                 ob_high=row.ob_high,
                 ob_low=row.ob_low,
@@ -325,7 +329,13 @@ class OrderBlockDetector:
                 impulse_direction=impulse_direction,
                 candle_direction=row.candle_direction,
                 quality=quality,
-                status="ACTIVE"
+                status="ACTIVE",
+                # Initialize lifecycle tracking fields
+                last_checked_time=now_utc,  # Time when this OB was generated/last checked
+                last_checked_candle_time=formation_time_utc_naive,  # Start checking from formation
+                test_count=0,  # No tests yet
+                max_penetration_pts=0.0,  # No penetration yet
+                max_penetration_pct=0.0  # No penetration yet
             )
             obs.append(ob)
 
@@ -362,6 +372,17 @@ class OrderBlockDetector:
             for ob in obs:
                 self.db.refresh(ob)
 
+            # IMPORTANT: Auto-update lifecycle states after generation
+            # This handles the case where OBs are generated for historical data
+            # (e.g., generating on Nov 30 for Nov 1-5 range)
+            # The update will check ALL price action from formation_time to NOW
+            # and populate lifecycle fields (test_count, broken_time, etc.)
+            self.update_ob_states(
+                symbol=symbol,
+                timeframe=timeframe,
+                up_to_time=datetime.now(pytz.UTC)
+            )
+
         # Calculate breakdown
         breakdown = {}
         for ob in obs:
@@ -383,6 +404,207 @@ class OrderBlockDetector:
             order_blocks=ob_responses,
             text_report=text_report
         )
+
+    def update_ob_states(
+        self,
+        symbol: str,
+        timeframe: str,
+        up_to_time: datetime
+    ) -> Dict[str, int]:
+        """
+        Update OB states based on price action up to a given time
+
+        Checks ACTIVE Order Blocks and updates their status to TESTED or BROKEN based on:
+        - TESTED: Price touches OB zone (3 detection options captured)
+        - BROKEN: Price closes beyond OB zone (invalidation)
+
+        Args:
+            symbol: Trading symbol
+            timeframe: Candle timeframe
+            up_to_time: Check price action up to this time (timezone-aware UTC)
+
+        Returns:
+            Dict with stats: {total_checked, tested, broken}
+        """
+        # Query ACTIVE Order Blocks for this symbol and timeframe
+        active_obs = self.db.query(DetectedOrderBlock).filter(
+            DetectedOrderBlock.symbol == symbol,
+            DetectedOrderBlock.timeframe == timeframe,
+            DetectedOrderBlock.status == "ACTIVE"
+        ).all()
+
+        if not active_obs:
+            return {"total_checked": 0, "tested": 0, "broken": 0}
+
+        table_name = f"candlestick_{timeframe}"
+
+        # Track state changes
+        stats = {
+            "total_checked": len(active_obs),
+            "tested": 0,
+            "broken": 0
+        }
+
+        for ob in active_obs:
+            # Determine time range to check
+            # Start from last_checked_candle_time or formation_time
+            if ob.last_checked_candle_time:
+                check_from = ob.last_checked_candle_time
+                if check_from.tzinfo is None:
+                    check_from = check_from.replace(tzinfo=pytz.UTC)
+            else:
+                check_from = ob.formation_time
+                if check_from.tzinfo is None:
+                    check_from = check_from.replace(tzinfo=pytz.UTC)
+
+            # Query candles in the check range
+            query = text(f"""
+                SELECT time_interval, high, low, close, open
+                FROM {table_name}
+                WHERE symbol = :symbol
+                  AND time_interval > :check_from
+                  AND time_interval <= :up_to_time
+                  AND is_spread = false
+                ORDER BY time_interval
+            """)
+
+            result = self.db.execute(query, {
+                "symbol": symbol,
+                "check_from": check_from.replace(tzinfo=None),  # PostgreSQL naive
+                "up_to_time": up_to_time.replace(tzinfo=None)
+            })
+
+            candles = list(result)
+            if not candles:
+                # No new candles to check, just update last_checked_time
+                ob.last_checked_time = up_to_time.replace(tzinfo=None)
+                continue
+
+            # Check each candle for state transitions
+            new_status = ob.status
+
+            for candle in candles:
+                # Update last_checked_candle_time
+                last_candle_time = candle.time_interval
+                if last_candle_time.tzinfo is None:
+                    last_candle_time = last_candle_time.replace(tzinfo=pytz.UTC)
+                ob.last_checked_candle_time = last_candle_time.replace(tzinfo=None)
+
+                if "BULLISH" in ob.ob_type:
+                    # BULLISH OB: zone is [ob_low, ob_high]
+                    # Acts as SUPPORT - expecting price to bounce off bottom
+
+                    # Option 1: Edge touch (candle.low touches ob_high)
+                    if candle.low <= ob.ob_high and ob.first_touch_edge_time is None:
+                        ob.first_touch_edge_time = last_candle_time.replace(tzinfo=None)
+                        ob.first_touch_edge_price = candle.low
+
+                    # Option 2: Midpoint touch (candle.low touches ob_body_midpoint)
+                    if candle.low <= ob.ob_body_midpoint and ob.first_touch_midpoint_time is None:
+                        ob.first_touch_midpoint_time = last_candle_time.replace(tzinfo=None)
+                        ob.first_touch_midpoint_price = candle.low
+
+                    # Option 3: Entry without close (candle enters zone but doesn't close inside)
+                    if (candle.low < ob.ob_high and
+                        candle.close >= ob.ob_low and
+                        ob.first_entry_no_close_time is None):
+                        ob.first_entry_no_close_time = last_candle_time.replace(tzinfo=None)
+                        ob.first_entry_candle_close = candle.close
+
+                    # Update test_count and test_times if any touch occurred
+                    if candle.low <= ob.ob_high:
+                        if ob.test_times is None:
+                            ob.test_times = []
+                        if last_candle_time.replace(tzinfo=None) not in ob.test_times:
+                            ob.test_times.append(last_candle_time.replace(tzinfo=None))
+                            ob.test_count += 1
+                            if new_status == "ACTIVE":
+                                new_status = "TESTED"
+
+                    # Calculate penetration (how far price went into OB zone)
+                    if candle.low < ob.ob_high:
+                        penetration_pts = max(0, ob.ob_high - candle.low)
+                        ob_range = ob.ob_high - ob.ob_low
+                        penetration_pct = (penetration_pts / ob_range * 100) if ob_range > 0 else 0
+
+                        if penetration_pts > ob.max_penetration_pts:
+                            ob.max_penetration_pts = penetration_pts
+                        if penetration_pct > ob.max_penetration_pct:
+                            ob.max_penetration_pct = penetration_pct
+
+                    # BROKEN: Price closes below OB low (invalidation)
+                    if candle.close < ob.ob_low:
+                        new_status = "BROKEN"
+                        if ob.broken_time is None:
+                            ob.broken_time = last_candle_time.replace(tzinfo=None)
+                            ob.broken_candle_close = candle.close
+                        break  # No need to check further candles
+
+                elif "BEARISH" in ob.ob_type:
+                    # BEARISH OB: zone is [ob_low, ob_high]
+                    # Acts as RESISTANCE - expecting price to bounce off top
+
+                    # Option 1: Edge touch (candle.high touches ob_low)
+                    if candle.high >= ob.ob_low and ob.first_touch_edge_time is None:
+                        ob.first_touch_edge_time = last_candle_time.replace(tzinfo=None)
+                        ob.first_touch_edge_price = candle.high
+
+                    # Option 2: Midpoint touch (candle.high touches ob_body_midpoint)
+                    if candle.high >= ob.ob_body_midpoint and ob.first_touch_midpoint_time is None:
+                        ob.first_touch_midpoint_time = last_candle_time.replace(tzinfo=None)
+                        ob.first_touch_midpoint_price = candle.high
+
+                    # Option 3: Entry without close (candle enters zone but doesn't close inside)
+                    if (candle.high > ob.ob_low and
+                        candle.close <= ob.ob_high and
+                        ob.first_entry_no_close_time is None):
+                        ob.first_entry_no_close_time = last_candle_time.replace(tzinfo=None)
+                        ob.first_entry_candle_close = candle.close
+
+                    # Update test_count and test_times if any touch occurred
+                    if candle.high >= ob.ob_low:
+                        if ob.test_times is None:
+                            ob.test_times = []
+                        if last_candle_time.replace(tzinfo=None) not in ob.test_times:
+                            ob.test_times.append(last_candle_time.replace(tzinfo=None))
+                            ob.test_count += 1
+                            if new_status == "ACTIVE":
+                                new_status = "TESTED"
+
+                    # Calculate penetration (how far price went into OB zone)
+                    if candle.high > ob.ob_low:
+                        penetration_pts = max(0, candle.high - ob.ob_low)
+                        ob_range = ob.ob_high - ob.ob_low
+                        penetration_pct = (penetration_pts / ob_range * 100) if ob_range > 0 else 0
+
+                        if penetration_pts > ob.max_penetration_pts:
+                            ob.max_penetration_pts = penetration_pts
+                        if penetration_pct > ob.max_penetration_pct:
+                            ob.max_penetration_pct = penetration_pct
+
+                    # BROKEN: Price closes above OB high (invalidation)
+                    if candle.close > ob.ob_high:
+                        new_status = "BROKEN"
+                        if ob.broken_time is None:
+                            ob.broken_time = last_candle_time.replace(tzinfo=None)
+                            ob.broken_candle_close = candle.close
+                        break  # No need to check further candles
+
+            # Update stats only if status actually changed
+            if new_status != ob.status:
+                if new_status == "TESTED":
+                    stats["tested"] += 1
+                elif new_status == "BROKEN":
+                    stats["broken"] += 1
+
+            # Update OB status and last_checked_time
+            ob.status = new_status
+            ob.last_checked_time = up_to_time.replace(tzinfo=None)
+
+        # Commit all changes
+        self.db.commit()
+
+        return stats
 
     def _format_et_time(self, utc_time: datetime) -> str:
         """

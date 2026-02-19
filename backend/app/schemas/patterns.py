@@ -161,6 +161,34 @@ class OrderBlockResponse(BaseModel):
     status: str  # ACTIVE, TESTED, BROKEN
     created_at: datetime
 
+    # Lifecycle tracking fields
+    last_checked_time: Optional[datetime] = None
+    last_checked_candle_time: Optional[datetime] = None
+
+    # Test interaction tracking
+    test_count: int = 0
+    test_times: Optional[List[datetime]] = None
+
+    # Option 1: Edge touch (price touches OB boundary)
+    first_touch_edge_time: Optional[datetime] = None
+    first_touch_edge_price: Optional[float] = None
+
+    # Option 2: Midpoint touch (price reaches 50% level)
+    first_touch_midpoint_time: Optional[datetime] = None
+    first_touch_midpoint_price: Optional[float] = None
+
+    # Option 3: Entry without close (candle enters zone but doesn't close inside)
+    first_entry_no_close_time: Optional[datetime] = None
+    first_entry_candle_close: Optional[float] = None
+
+    # BROKEN state tracking
+    broken_time: Optional[datetime] = None
+    broken_candle_close: Optional[float] = None
+
+    # Penetration metrics
+    max_penetration_pts: float = 0.0
+    max_penetration_pct: float = 0.0
+
     class Config:
         from_attributes = True
 
@@ -172,6 +200,21 @@ class OrderBlockGenerationResponse(BaseModel):
     auto_parameters: dict  # {min_impulse: 18.5, strong_threshold: 28, ...}
     order_blocks: List[OrderBlockResponse]
     text_report: str  # Markdown formatted report
+
+
+class OrderBlockStateUpdateRequest(BaseModel):
+    """Request to update Order Block states"""
+    symbol: str = Field(..., example="NQZ5")
+    timeframe: str = Field(default="5min", example="5min")
+    up_to_time: datetime = Field(..., example="2025-11-24T16:00:00")
+
+
+class OrderBlockStateUpdateResponse(BaseModel):
+    """Response from Order Block state update endpoint"""
+    total_checked: int
+    tested: int
+    broken: int
+    message: str
 
 
 # ============================================================================

@@ -3,8 +3,9 @@ Pattern Detection API Endpoints
 
 Endpoints for FVG, Liquidity Pool, and Order Block detection.
 """
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
+import pytz
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -31,6 +32,8 @@ from app.schemas.patterns import (
     OrderBlockGenerationResponse,
     OrderBlockListResponse,
     OrderBlockResponse,
+    OrderBlockStateUpdateRequest,
+    OrderBlockStateUpdateResponse,
     # Interaction schemas
     PatternInteractionsResponse,
     PatternInteractionResponse,
@@ -277,6 +280,64 @@ def list_order_blocks(
     return OrderBlockListResponse(
         total=len(obs),
         order_blocks=[OrderBlockResponse.from_orm(ob) for ob in obs]
+    )
+
+
+@router.post("/order-blocks/update-states", response_model=OrderBlockStateUpdateResponse)
+def update_order_block_states(
+    request: OrderBlockStateUpdateRequest,
+    db: Session = Depends(get_db_sync)
+):
+    """
+    Update Order Block states based on price action
+
+    Checks ACTIVE Order Blocks and updates their status to TESTED or BROKEN:
+    - TESTED: Price touches OB zone (3 detection options captured)
+    - BROKEN: Price closes beyond OB zone (invalidation)
+
+    This endpoint captures all 3 test options for future backtesting:
+    1. Edge touch (price touches OB boundary)
+    2. Midpoint touch (price reaches 50% level)
+    3. Entry without close (candle enters but doesn't close inside)
+
+    Args:
+    - symbol: Trading symbol
+    - timeframe: Candle timeframe
+    - up_to_time: Check price action up to this time (UTC)
+
+    Returns:
+    - total_checked: Number of ACTIVE OBs checked
+    - tested: Number of OBs transitioned to TESTED
+    - broken: Number of OBs transitioned to BROKEN
+    - message: Summary message
+    """
+    detector = OrderBlockDetector(db)
+
+    # Ensure up_to_time is timezone-aware UTC
+    up_to_time = request.up_to_time
+    if up_to_time.tzinfo is None:
+        # Assume UTC if naive
+        up_to_time = up_to_time.replace(tzinfo=pytz.UTC)
+    else:
+        # Convert to UTC
+        up_to_time = up_to_time.astimezone(pytz.UTC)
+
+    # Update OB states
+    stats = detector.update_ob_states(
+        symbol=request.symbol,
+        timeframe=request.timeframe,
+        up_to_time=up_to_time
+    )
+
+    # Generate summary message
+    message = f"Checked {stats['total_checked']} ACTIVE Order Blocks. "
+    message += f"Transitions: {stats['tested']} → TESTED, {stats['broken']} → BROKEN."
+
+    return OrderBlockStateUpdateResponse(
+        total_checked=stats["total_checked"],
+        tested=stats["tested"],
+        broken=stats["broken"],
+        message=message
     )
 
 

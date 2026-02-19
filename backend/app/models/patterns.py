@@ -10,6 +10,7 @@ from sqlalchemy import (
     Column, Integer, String, Float, DateTime, ARRAY, Boolean,
     Index, func, UniqueConstraint
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY, JSONB
 from app.db.session import Base
 
@@ -105,6 +106,34 @@ class DetectedOrderBlock(Base):
     quality = Column(String(10), nullable=False)  # HIGH, MEDIUM, LOW
     status = Column(String(20), nullable=False, server_default="ACTIVE")  # ACTIVE, TESTED, BROKEN
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Lifecycle tracking fields
+    last_checked_time = Column(DateTime(timezone=True), nullable=True)
+    last_checked_candle_time = Column(DateTime(timezone=True), nullable=True)
+
+    # Test interaction tracking
+    test_count = Column(Integer, nullable=False, server_default="0")
+    test_times = Column(postgresql.ARRAY(DateTime(timezone=True)), nullable=True)
+
+    # Option 1: Edge touch (price touches OB boundary)
+    first_touch_edge_time = Column(DateTime(timezone=True), nullable=True)
+    first_touch_edge_price = Column(Float, nullable=True)
+
+    # Option 2: Midpoint touch (price reaches 50% level)
+    first_touch_midpoint_time = Column(DateTime(timezone=True), nullable=True)
+    first_touch_midpoint_price = Column(Float, nullable=True)
+
+    # Option 3: Entry without close (candle enters zone but doesn't close inside)
+    first_entry_no_close_time = Column(DateTime(timezone=True), nullable=True)
+    first_entry_candle_close = Column(Float, nullable=True)
+
+    # BROKEN state tracking
+    broken_time = Column(DateTime(timezone=True), nullable=True)
+    broken_candle_close = Column(Float, nullable=True)
+
+    # Penetration metrics
+    max_penetration_pts = Column(Float, nullable=False, server_default="0.0")
+    max_penetration_pct = Column(Float, nullable=False, server_default="0.0")
 
     __table_args__ = (
         Index('idx_obs_symbol_time', 'symbol', 'formation_time'),

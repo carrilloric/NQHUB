@@ -9,6 +9,7 @@ import { MarketStateControls } from "./MarketStateControls";
 import { GlobalMarketStateDashboard } from "./GlobalMarketStateDashboard";
 import { AllTimeframesView } from "./AllTimeframesView";
 import { SingleTimeframeView } from "./SingleTimeframeView";
+import { AuditValidationPanel } from "./AuditValidationPanel";
 import { TIMEFRAMES, TIMEFRAME_LABELS, type Timeframe } from "@/constants/timeframes";
 import type {
   MarketStateDetailResponse,
@@ -47,9 +48,12 @@ export const MarketStateSection: React.FC = () => {
       {/* Timeframe Tabs */}
       {currentSnapshot && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-10">
+          <TabsList className="grid w-full grid-cols-11">
             <TabsTrigger value="all" data-testid="all-timeframes-tab">
               All Timeframes
+            </TabsTrigger>
+            <TabsTrigger value="audit" data-testid="audit-tab">
+              Audit
             </TabsTrigger>
             {TIMEFRAMES.map(tf => (
               <TabsTrigger key={tf} value={tf} data-testid={`${tf}-tab`}>
@@ -60,6 +64,10 @@ export const MarketStateSection: React.FC = () => {
 
           <TabsContent value="all" className="space-y-4">
             <AllTimeframesView snapshot={currentSnapshot} />
+          </TabsContent>
+
+          <TabsContent value="audit" className="space-y-4">
+            <AuditValidationPanel />
           </TabsContent>
 
           {TIMEFRAMES.map(tf => (

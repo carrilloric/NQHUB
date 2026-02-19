@@ -5,6 +5,7 @@
  */
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock } from "lucide-react";
 import { apiClient } from "@/services/api";
+import { MarketStateSnapshotTable } from "./MarketStateSnapshotTable";
 import type {
   MarketStateDetailResponse,
   MarketStateListResponse,
@@ -57,6 +59,35 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
   // Progress tracking state
   const [progress, setProgress] = useState<MarketStateProgressResponse | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Available date range
+  const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
+
+  // Snapshots list for table display
+  const [snapshotsList, setSnapshotsList] = useState<MarketStateListResponse | null>(null);
+
+  // Fetch available date range on mount
+  useEffect(() => {
+    const fetchDateRange = async () => {
+      try {
+        const list = await apiClient.listMarketStateSnapshots({
+          symbol: loadSymbol,
+          limit: 1
+        });
+        if (list.snapshots.length > 0) {
+          const firstSnapshot = list.snapshots[0];
+          const lastSnapshot = list.snapshots[list.snapshots.length - 1];
+          setDateRange({
+            start: formatInTimeZone(new Date(firstSnapshot.snapshot_time), 'America/New_York', 'MMM d, yyyy'),
+            end: formatInTimeZone(new Date(lastSnapshot.snapshot_time), 'America/New_York', 'MMM d, yyyy')
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch date range:', err);
+      }
+    };
+    fetchDateRange();
+  }, [loadSymbol]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -174,7 +205,20 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
       onSnapshotLoaded(detail);
       setSuccess(`Loaded snapshot for ${sym} at ${detail.snapshot_time_est}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || "Failed to load snapshot");
+      let errorMsg = "Failed to load snapshot";
+
+      if (err.response?.status === 404) {
+        const estTime = formatInTimeZone(new Date(time), 'America/New_York', 'MMM d, yyyy HH:mm');
+        errorMsg = `No snapshot found for ${sym} at ${estTime} EST.`;
+        if (dateRange) {
+          errorMsg += ` Available data: ${dateRange.start} - ${dateRange.end}.`;
+        }
+        errorMsg += ' Snapshots are generated at 5-minute intervals (e.g., 09:00, 09:05, 09:10).';
+      } else {
+        errorMsg = err.response?.data?.detail || err.message || errorMsg;
+      }
+
+      setError(errorMsg);
     } finally {
       setLoadingSnapshot(false);
       setLoading(false);
@@ -182,13 +226,25 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
   };
 
   const handleLoadSnapshot = async () => {
-    const snapshotTime = `${formatDateForAPI(loadDate)}T${loadTime}:00`;
-    await loadSnapshotDetail(loadSymbol, snapshotTime);
+    try {
+      // Convert EST input to UTC for API
+      const estDateTimeStr = `${formatDateForAPI(loadDate)}T${loadTime}:00`;
+      const estDateTime = toZonedTime(estDateTimeStr, 'America/New_York');
+      const snapshotTime = formatInTimeZone(estDateTime, 'UTC', "yyyy-MM-dd'T'HH:mm:ss");
+
+      await loadSnapshotDetail(loadSymbol, snapshotTime);
+    } catch (err: any) {
+      setError(`Invalid date/time: ${err.message}`);
+      setLoadingSnapshot(false);
+      setLoading(false);
+    }
   };
 
   const handleListSnapshots = async () => {
     setLoadingSnapshot(true);
     setError(null);
+    setSuccess(null);
+    setSnapshotsList(null); // Clear previous list
 
     try {
       const list = await apiClient.listMarketStateSnapshots({
@@ -196,12 +252,18 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
         limit: 100
       });
       onSnapshotsListLoaded(list);
+      setSnapshotsList(list); // Store list for table display
       setSuccess(`Found ${list.total} snapshots for ${loadSymbol}`);
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || "Failed to list snapshots");
     } finally {
       setLoadingSnapshot(false);
     }
+  };
+
+  // Handle snapshot selection from table
+  const handleTableLoadSnapshot = (symbol: string, snapshotTime: string) => {
+    loadSnapshotDetail(symbol, snapshotTime);
   };
 
   return (
@@ -321,6 +383,11 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
                 onDateChange={setLoadDate}
                 className="w-full"
               />
+              {dateRange && (
+                <p className="text-xs text-muted-foreground">
+                  Available: {dateRange.start} - {dateRange.end}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="load-time">Time EST</Label>
@@ -331,11 +398,17 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
                 onChange={(e) => setLoadTime(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                {loadTime && (() => {
-                  const [hours, minutes] = loadTime.split(':').map(Number);
-                  const utcHours = (hours + 5) % 24;
-                  const utcTime = `${String(utcHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                  return `UTC: ${utcTime}`;
+                {loadTime && loadDate && (() => {
+                  try {
+                    // Create EST datetime from date + time inputs
+                    const estDateTimeStr = `${formatDateForAPI(loadDate)}T${loadTime}:00`;
+                    const estDateTime = toZonedTime(estDateTimeStr, 'America/New_York');
+                    // Format as UTC time
+                    const utcTime = formatInTimeZone(estDateTime, 'UTC', 'HH:mm');
+                    return `UTC: ${utcTime}`;
+                  } catch (e) {
+                    return 'UTC: --:--';
+                  }
                 })()}
               </p>
             </div>
@@ -422,12 +495,21 @@ export const MarketStateControls: React.FC<MarketStateControlsProps> = ({
         </Card>
       )}
 
-      {success && !progress && (
+      {success && !progress && !snapshotsList && (
         <Card className="md:col-span-2 border-green-500">
           <CardContent className="pt-6">
             <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Snapshots List Table */}
+      {snapshotsList && (
+        <MarketStateSnapshotTable
+          data={snapshotsList}
+          onLoadSnapshot={handleTableLoadSnapshot}
+          loading={loadingSnapshot}
+        />
       )}
     </div>
   );
