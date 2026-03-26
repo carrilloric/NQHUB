@@ -176,6 +176,18 @@ class ApiClient {
     await this.client.delete(`/invitations/${id}`);
   }
 
+  // ==================== Generic HTTP Methods ====================
+
+  async get<T = any>(url: string, config?: any): Promise<T> {
+    const response = await this.client.get<T>(url, config);
+    return response.data;
+  }
+
+  async post<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    const response = await this.client.post<T>(url, data, config);
+    return response.data;
+  }
+
   // ==================== ETL Endpoints ====================
 
   async analyzeZip(file: File): Promise<any> {

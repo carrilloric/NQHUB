@@ -4,6 +4,7 @@ import { useAuth, useI18n, useUI } from "@/state/app";
 import { Bell, ChevronDown, Database, Globe, Languages, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VannaStatsModal } from "@/components/assistant/VannaStatsModal";
+import { ServerTimeClock } from "@/components/common/ServerTimeClock";
 
 export const TopNavbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -111,17 +112,23 @@ ToolbarIcon.displayName = "ToolbarIcon";
 
 const Ticker: React.FC = () => {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-4 rounded-full border border-primary/40 bg-gradient-to-r from-[#0b141f] to-[#0e1b28] px-5 py-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground/80 shadow-[0_0_24px_rgba(0,171,196,0.12)]",
-      )}
-    >
-      <span className="text-secondary text-sm font-bold tracking-[0.26em]">NQ</span>
-      <span className="tabular-nums text-base font-semibold text-foreground">15,234.12</span>
-      <span className="text-bullish tabular-nums font-semibold">+0.85%</span>
-      <div className="ml-2 flex h-2 w-24 items-center overflow-hidden rounded-full bg-muted/60">
-        <div className="h-full w-1/2 bg-primary/70 animate-[pulse_1.8s_ease-in-out_infinite]"></div>
+    <div className="flex items-center gap-3">
+      <div
+        className={cn(
+          "flex items-center gap-4 rounded-full border border-primary/40 bg-gradient-to-r from-[#0b141f] to-[#0e1b28] px-5 py-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground/80 shadow-[0_0_24px_rgba(0,171,196,0.12)]",
+        )}
+      >
+        <span className="text-secondary text-sm font-bold tracking-[0.26em]">NQ</span>
+        <span className="tabular-nums text-base font-semibold text-foreground">15,234.12</span>
+        <span className="text-bullish tabular-nums font-semibold">+0.85%</span>
+        <div className="ml-2 flex h-2 w-24 items-center overflow-hidden rounded-full bg-muted/60">
+          <div className="h-full w-1/2 bg-primary/70 animate-[pulse_1.8s_ease-in-out_infinite]"></div>
+        </div>
       </div>
+      <ServerTimeClock
+        format="compact"
+        className="bg-gradient-to-r from-[#0b141f] to-[#0e1b28] border-primary/40 shadow-[0_0_24px_rgba(0,171,196,0.12)]"
+      />
     </div>
   );
 };

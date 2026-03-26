@@ -301,6 +301,32 @@ pattern = DetectedPattern(
 
 **See**: `docs/TIMEZONE_HANDLING.md` for complete guide, validation checklist, and troubleshooting.
 
+### Server Time System
+
+NQHUB maintains a centralized server time system that provides a single source of truth for date/time across the application.
+
+**Key Features:**
+- Server time maintained in Eastern Time (ET) with automatic DST handling
+- Real-time clock display in TopNavbar
+- Automatic sync every 60 seconds
+- Connection status indicators (green/yellow/red)
+- Available globally via `useServerTime()` hook
+
+**Usage:**
+```typescript
+import { useServerTime } from '@/state/server-time';
+
+const { getCurrentTime, getFormattedET } = useServerTime();
+// Returns: "2024-11-29 14:30:45 ET (19:30:45 UTC)"
+```
+
+**Endpoints:**
+- `GET /api/v1/system/time` - Get current server time
+- `GET /api/v1/system/config` - Get timezone configuration
+- `GET /api/v1/system/heartbeat` - Connection check
+
+**See**: `docs/SERVER_TIME_IMPLEMENTATION.md` for complete implementation details.
+
 ### Internationalization
 
 i18n files in `client/locales/` (en.json, es.json). Access translations via:

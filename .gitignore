@@ -104,7 +104,7 @@ frontend/playwright-report/
 frontend/test-results/
 
 # Zone Identifier files (Windows)
-*:Zone.Identifier
+*.Zone.Identifier
 
 # Serena AI agent
 .serena/

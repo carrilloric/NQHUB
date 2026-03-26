@@ -17,7 +17,21 @@ import DataModule from "./pages/DataModule";
 import StatisticalAnalysis from "./pages/StatisticalAnalysis";
 import WithLayout from "./pages/Placeholders";
 import ChartTest from "./pages/ChartTest";
+// New page imports
+import Features from "./pages/Features";
+import BacktestingRuleBased from "./pages/BacktestingRuleBased";
+import BacktestingAI from "./pages/BacktestingAI";
+import MachineLearning from "./pages/MachineLearning";
+import Approval from "./pages/Approval";
+import Bot from "./pages/Bot";
+import Orders from "./pages/Orders";
+import RiskManagement from "./pages/RiskManagement";
+import Trades from "./pages/Trades";
+import Settings from "./pages/Settings";
+import Strategies from "./pages/Strategies";
+import Assistant from "./pages/Assistant";
 import { AppProvider, useAuth, Role } from "@/state/app";
+import { ServerTimeProvider } from "@/state/server-time";
 
 const queryClient = new QueryClient();
 
@@ -52,8 +66,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AppProvider>
-        <BrowserRouter>
-          <Routes>
+        <ServerTimeProvider>
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -91,10 +106,18 @@ const App = () => (
               }
             />
             <Route
+              path="/features"
+              element={
+                <ProtectedRoute>
+                  <Features />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/backtesting/rule-based"
               element={
                 <ProtectedRoute>
-                  <WithLayout title="Backtesting Rule-Based" />
+                  <BacktestingRuleBased />
                 </ProtectedRoute>
               }
             />
@@ -102,7 +125,23 @@ const App = () => (
               path="/backtesting/ai"
               element={
                 <ProtectedRoute>
-                  <WithLayout title="Backtesting AI" />
+                  <BacktestingAI />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ml"
+              element={
+                <ProtectedRoute>
+                  <MachineLearning />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/approval"
+              element={
+                <ProtectedRoute>
+                  <Approval />
                 </ProtectedRoute>
               }
             />
@@ -110,10 +149,47 @@ const App = () => (
               path="/bot"
               element={
                 <ProtectedRoute>
-                  <WithLayout
-                    title="BOT Module"
-                    description="Trader access required"
-                  />
+                  <Bot />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/risk"
+              element={
+                <ProtectedRoute>
+                  <RiskManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/trades"
+              element={
+                <ProtectedRoute>
+                  <Trades />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/strategies"
+              element={
+                <ProtectedRoute>
+                  <Strategies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assistant"
+              element={
+                <ProtectedRoute>
+                  <Assistant />
                 </ProtectedRoute>
               }
             />
@@ -121,7 +197,7 @@ const App = () => (
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <WithLayout title="Settings" />
+                  <Settings />
                 </ProtectedRoute>
               }
             />
@@ -178,9 +254,27 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </AppProvider>
+      </ServerTimeProvider>
+    </AppProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Initialize MSW for development
+async function enableMocking() {
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+
+  const { worker } = await import('../mocks/browser');
+
+  // Start the worker with onUnhandledRequest set to 'bypass' to allow real API calls
+  return worker.start({
+    onUnhandledRequest: 'bypass',
+  });
+}
+
+// Start the app with MSW enabled in development
+enableMocking().then(() => {
+  createRoot(document.getElementById("root")!).render(<App />);
+});
