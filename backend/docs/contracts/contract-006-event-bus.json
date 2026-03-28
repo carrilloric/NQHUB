@@ -1,0 +1,734 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NQ-HUB Event Bus Schemas",
+  "description": "Event Bus schemas for Redis pub/sub in NQ-HUB Live Trading (Feature 4)",
+  "version": "1.0.0",
+  "contact": {
+    "name": "AUTOMATION LABS TEAM",
+    "email": "support@automation-labs.ai"
+  },
+  "topics": {
+    "nautilus_trader": {
+      "description": "Built-in NautilusTrader event topics",
+      "patterns": {
+        "data.bars.{symbol}-{timeframe}.{venue}": {
+          "description": "OHLCV bar data",
+          "schema": {
+            "$ref": "#/definitions/Bar"
+          }
+        },
+        "data.trades.{symbol}.{venue}": {
+          "description": "Trade tick data",
+          "schema": {
+            "$ref": "#/definitions/TradeTick"
+          }
+        },
+        "exec.order.{venue}.{event}": {
+          "description": "Order execution events",
+          "events": ["submitted", "accepted", "filled", "cancelled", "rejected", "expired"],
+          "schema": {
+            "$ref": "#/definitions/OrderEvent"
+          }
+        },
+        "exec.position.{venue}.{event}": {
+          "description": "Position events",
+          "events": ["opened", "changed", "closed"],
+          "schema": {
+            "$ref": "#/definitions/PositionEvent"
+          }
+        }
+      }
+    },
+    "nqhub_custom": {
+      "description": "Custom NQHUB event topics",
+      "patterns": {
+        "nqhub.candle.{timeframe}": {
+          "description": "Complete candle with 35 fields including order flow",
+          "schema": {
+            "$ref": "#/definitions/NQHubCandle"
+          }
+        },
+        "nqhub.pattern.fvg": {
+          "description": "Fair Value Gap detection",
+          "schema": {
+            "$ref": "#/definitions/FVGDetected"
+          }
+        },
+        "nqhub.pattern.ob": {
+          "description": "Order Block detection",
+          "schema": {
+            "$ref": "#/definitions/OBDetected"
+          }
+        },
+        "nqhub.pattern.lp": {
+          "description": "Liquidity Pool detection",
+          "schema": {
+            "$ref": "#/definitions/LPDetected"
+          }
+        },
+        "nqhub.pattern.interaction": {
+          "description": "Pattern interaction event (R0-R4, P1-P5)",
+          "schema": {
+            "$ref": "#/definitions/PatternInteraction"
+          }
+        },
+        "nqhub.risk.circuit_breaker": {
+          "description": "Circuit breaker triggered",
+          "priority": "HIGH",
+          "schema": {
+            "$ref": "#/definitions/CircuitBreakerEvent"
+          }
+        },
+        "nqhub.risk.kill_switch": {
+          "description": "Kill switch activated",
+          "priority": "HIGHEST",
+          "schema": {
+            "$ref": "#/definitions/KillSwitchEvent"
+          }
+        },
+        "nqhub.ws.bridge": {
+          "description": "Serialized event for WebSocket relay",
+          "schema": {
+            "$ref": "#/definitions/SerializedEvent"
+          }
+        },
+        "nqhub.db.write": {
+          "description": "Batched database write event",
+          "schema": {
+            "$ref": "#/definitions/BatchedWriteEvent"
+          }
+        },
+        "nqhub.notification.alert": {
+          "description": "Notification alerts",
+          "schema": {
+            "$ref": "#/definitions/NotificationEvent"
+          }
+        }
+      }
+    }
+  },
+  "actors": {
+    "CandleBuilderActor": {
+      "description": "Builds complete candles from trade ticks",
+      "subscribes": [
+        "data.trades.NQ.{venue}"
+      ],
+      "publishes": [
+        "nqhub.candle.{timeframe}"
+      ]
+    },
+    "PatternDetectorActor": {
+      "description": "Detects ICT patterns from candles",
+      "subscribes": [
+        "nqhub.candle.*"
+      ],
+      "publishes": [
+        "nqhub.pattern.fvg",
+        "nqhub.pattern.ob",
+        "nqhub.pattern.lp",
+        "nqhub.pattern.interaction"
+      ]
+    },
+    "NQHubRiskActor": {
+      "description": "Monitors risk and triggers safety mechanisms",
+      "subscribes": [
+        "exec.order.*.*",
+        "exec.position.*.*"
+      ],
+      "publishes": [
+        "nqhub.risk.circuit_breaker",
+        "nqhub.risk.kill_switch"
+      ]
+    },
+    "WsBridgeActor": {
+      "description": "Bridges events to WebSocket clients",
+      "subscribes": [
+        "nqhub.candle.*",
+        "nqhub.pattern.*",
+        "nqhub.risk.*",
+        "exec.order.*.*",
+        "exec.position.*.*"
+      ],
+      "publishes": [
+        "nqhub.ws.bridge"
+      ]
+    },
+    "DbWriterActor": {
+      "description": "Persists events to PostgreSQL",
+      "subscribes": [
+        "nqhub.candle.*",
+        "nqhub.pattern.*",
+        "exec.order.*.filled",
+        "exec.position.*.closed"
+      ],
+      "publishes": [
+        "nqhub.db.write"
+      ]
+    },
+    "NotificationActor": {
+      "description": "Sends notifications for critical events",
+      "subscribes": [
+        "nqhub.risk.circuit_breaker",
+        "nqhub.risk.kill_switch",
+        "exec.order.*.filled"
+      ],
+      "publishes": [
+        "nqhub.notification.alert"
+      ]
+    }
+  },
+  "definitions": {
+    "Bar": {
+      "type": "object",
+      "required": ["timestamp", "open", "high", "low", "close", "volume"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "open": {
+          "type": "number"
+        },
+        "high": {
+          "type": "number"
+        },
+        "low": {
+          "type": "number"
+        },
+        "close": {
+          "type": "number"
+        },
+        "volume": {
+          "type": "integer"
+        }
+      }
+    },
+    "TradeTick": {
+      "type": "object",
+      "required": ["timestamp", "price", "size", "aggressor_side"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "price": {
+          "type": "number"
+        },
+        "size": {
+          "type": "integer"
+        },
+        "aggressor_side": {
+          "type": "string",
+          "enum": ["BUY", "SELL", "UNKNOWN"]
+        },
+        "trade_id": {
+          "type": "string"
+        }
+      }
+    },
+    "OrderEvent": {
+      "type": "object",
+      "required": ["order_id", "venue_order_id", "client_order_id", "event_type", "timestamp"],
+      "properties": {
+        "order_id": {
+          "type": "string"
+        },
+        "venue_order_id": {
+          "type": "string"
+        },
+        "client_order_id": {
+          "type": "string"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": ["submitted", "accepted", "filled", "cancelled", "rejected", "expired"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "side": {
+          "type": "string",
+          "enum": ["BUY", "SELL"]
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "price": {
+          "type": "number"
+        },
+        "filled_qty": {
+          "type": "integer"
+        },
+        "avg_fill_price": {
+          "type": "number"
+        }
+      }
+    },
+    "PositionEvent": {
+      "type": "object",
+      "required": ["position_id", "event_type", "timestamp", "symbol"],
+      "properties": {
+        "position_id": {
+          "type": "string"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": ["opened", "changed", "closed"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "side": {
+          "type": "string",
+          "enum": ["LONG", "SHORT"]
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "entry_price": {
+          "type": "number"
+        },
+        "exit_price": {
+          "type": "number"
+        },
+        "unrealized_pnl": {
+          "type": "number"
+        },
+        "realized_pnl": {
+          "type": "number"
+        }
+      }
+    },
+    "NQHubCandle": {
+      "type": "object",
+      "required": [
+        "timestamp", "open", "high", "low", "close", "volume",
+        "delta", "poc", "value_area_high", "value_area_low"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp"
+        },
+        "open": {
+          "type": "number"
+        },
+        "high": {
+          "type": "number"
+        },
+        "low": {
+          "type": "number"
+        },
+        "close": {
+          "type": "number"
+        },
+        "volume": {
+          "type": "integer"
+        },
+        "delta": {
+          "type": "integer",
+          "description": "Buy volume - Sell volume"
+        },
+        "delta_pct": {
+          "type": "number",
+          "description": "Delta as percentage of volume"
+        },
+        "poc": {
+          "type": "number",
+          "description": "Point of Control price"
+        },
+        "value_area_high": {
+          "type": "number",
+          "description": "70% value area high"
+        },
+        "value_area_low": {
+          "type": "number",
+          "description": "70% value area low"
+        },
+        "buy_volume": {
+          "type": "integer"
+        },
+        "sell_volume": {
+          "type": "integer"
+        },
+        "imbalance_buy": {
+          "type": "integer"
+        },
+        "imbalance_sell": {
+          "type": "integer"
+        },
+        "absorption_buy": {
+          "type": "integer"
+        },
+        "absorption_sell": {
+          "type": "integer"
+        },
+        "aggressive_buy": {
+          "type": "integer"
+        },
+        "aggressive_sell": {
+          "type": "integer"
+        },
+        "oflow_unit": {
+          "type": "object",
+          "description": "Footprint data structure"
+        }
+      }
+    },
+    "FVGDetected": {
+      "type": "object",
+      "required": ["pattern_id", "formation_time", "significance", "gap_high", "gap_low"],
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "formation_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "significance": {
+          "type": "string",
+          "enum": ["MICRO", "SMALL", "MEDIUM", "LARGE", "EXTREME"]
+        },
+        "gap_high": {
+          "type": "number"
+        },
+        "gap_low": {
+          "type": "number"
+        },
+        "premium_level": {
+          "type": "number",
+          "description": "High boundary (resistance)"
+        },
+        "discount_level": {
+          "type": "number",
+          "description": "Low boundary (support)"
+        },
+        "consequent_encroachment": {
+          "type": "number",
+          "description": "50% level (ICT retracement target)"
+        },
+        "gap_size": {
+          "type": "number"
+        },
+        "displacement_score": {
+          "type": "number"
+        },
+        "has_break_of_structure": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["UNMITIGATED", "REDELIVERED", "REBALANCED"]
+        }
+      }
+    },
+    "OBDetected": {
+      "type": "object",
+      "required": ["pattern_id", "formation_time", "ob_type", "ob_high", "ob_low"],
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "formation_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ob_type": {
+          "type": "string",
+          "enum": ["BULLISH_OB", "BEARISH_OB", "STRONG_BULLISH_OB", "STRONG_BEARISH_OB"]
+        },
+        "ob_high": {
+          "type": "number"
+        },
+        "ob_low": {
+          "type": "number"
+        },
+        "ob_body_midpoint": {
+          "type": "number",
+          "description": "(open + close) / 2"
+        },
+        "ob_range_midpoint": {
+          "type": "number",
+          "description": "(high + low) / 2"
+        },
+        "impulse_move": {
+          "type": "number",
+          "description": "Size of impulse in points"
+        },
+        "impulse_direction": {
+          "type": "string",
+          "enum": ["UP", "DOWN"]
+        },
+        "quality": {
+          "type": "string",
+          "enum": ["HIGH", "MEDIUM", "LOW"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "TESTED", "BROKEN"]
+        }
+      }
+    },
+    "LPDetected": {
+      "type": "object",
+      "required": ["pattern_id", "formation_time", "pool_type", "zone_high", "zone_low"],
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "formation_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "pool_type": {
+          "type": "string",
+          "enum": ["EQH", "EQL", "NYH", "NYL", "ASH", "ASL", "LSH", "LSL", "SWING_HIGH", "SWING_LOW"]
+        },
+        "zone_high": {
+          "type": "number"
+        },
+        "zone_low": {
+          "type": "number"
+        },
+        "modal_level": {
+          "type": "number",
+          "description": "Price level with most touches"
+        },
+        "touches": {
+          "type": "integer",
+          "description": "Number of touches to this level"
+        },
+        "tolerance": {
+          "type": "number",
+          "description": "ATR-based tolerance for zone"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["UNMITIGATED", "RESPECTED", "SWEPT", "MITIGATED"]
+        }
+      }
+    },
+    "PatternInteraction": {
+      "type": "object",
+      "required": ["pattern_id", "pattern_type", "interaction_type", "timestamp", "price_at_interaction"],
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pattern_type": {
+          "type": "string",
+          "enum": ["FVG", "ORDER_BLOCK", "LIQUIDITY_POOL"]
+        },
+        "interaction_type": {
+          "type": "string",
+          "enum": ["R0", "R1", "R2", "R3", "R4", "P1", "P2", "P3", "P4", "P5"],
+          "description": "R0-R4: Rejection levels, P1-P5: Penetration levels"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "price_at_interaction": {
+          "type": "number"
+        },
+        "penetration_pct": {
+          "type": "number",
+          "description": "Percentage of pattern penetrated"
+        },
+        "volume_at_interaction": {
+          "type": "integer"
+        }
+      }
+    },
+    "CircuitBreakerEvent": {
+      "type": "object",
+      "required": ["triggered_at", "reason", "threshold_exceeded", "actions_taken"],
+      "properties": {
+        "triggered_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "threshold_exceeded": {
+          "type": "string",
+          "description": "Which risk threshold was exceeded"
+        },
+        "actions_taken": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of actions taken (e.g., 'stopped_new_orders', 'closed_positions')"
+        },
+        "affected_bots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["HIGH"],
+          "default": "HIGH"
+        }
+      }
+    },
+    "KillSwitchEvent": {
+      "type": "object",
+      "required": ["activated_at", "reason", "bots_killed", "positions_closed", "orders_cancelled", "priority"],
+      "properties": {
+        "activated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "bots_killed": {
+          "type": "integer"
+        },
+        "positions_closed": {
+          "type": "integer"
+        },
+        "orders_cancelled": {
+          "type": "integer"
+        },
+        "affected_bots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["bot_id", "status_before", "positions_closed", "orders_cancelled"],
+            "properties": {
+              "bot_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "status_before": {
+                "type": "string"
+              },
+              "positions_closed": {
+                "type": "integer"
+              },
+              "orders_cancelled": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["HIGHEST"],
+          "description": "Kill switch always has HIGHEST priority"
+        }
+      }
+    },
+    "SerializedEvent": {
+      "type": "object",
+      "required": ["channel", "event", "data", "timestamp"],
+      "properties": {
+        "channel": {
+          "type": "string",
+          "description": "WebSocket channel name"
+        },
+        "event": {
+          "type": "string",
+          "description": "Event type within channel"
+        },
+        "data": {
+          "type": "object",
+          "description": "Event payload (already JSON serialized)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "bot_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "BatchedWriteEvent": {
+      "type": "object",
+      "required": ["batch_id", "table", "records", "timestamp"],
+      "properties": {
+        "batch_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "table": {
+          "type": "string",
+          "description": "Target database table"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Records to write (batched for efficiency)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["LOW", "NORMAL", "HIGH"],
+          "default": "NORMAL"
+        }
+      }
+    },
+    "NotificationEvent": {
+      "type": "object",
+      "required": ["notification_id", "type", "severity", "message", "timestamp"],
+      "properties": {
+        "notification_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["EMAIL", "SMS", "SLACK", "WEBHOOK"]
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["INFO", "WARNING", "CRITICAL"]
+        },
+        "message": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "recipients": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

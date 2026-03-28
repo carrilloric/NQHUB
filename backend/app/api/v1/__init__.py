@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, market_state, audit, system,
     features, backtesting, ml, approval, bots, orders, risk, trades,
-    settings, strategies, assistant
+    settings, strategies, assistant, data_platform
 )
 from app.etl import routes as etl_routes
 
@@ -13,6 +13,9 @@ api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(invitations.router, prefix="/invitations", tags=["invitations"])
 api_router.include_router(approval.router, prefix="/approval", tags=["approval"])
+
+# Data Platform API (CONTRACT-001)
+api_router.include_router(data_platform.router, prefix="/data", tags=["data-platform"])
 
 # Data & Analysis
 api_router.include_router(candles.router, prefix="/candles", tags=["candles"])
