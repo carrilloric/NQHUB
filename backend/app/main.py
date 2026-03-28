@@ -8,6 +8,7 @@ import logging
 
 from app.config import settings
 from app.api.v1 import api_router
+from app.api.websocket import websocket_router
 
 # Setup logging
 logging.basicConfig(
@@ -59,6 +60,9 @@ async def root():
 
 # Include API routers
 app.include_router(api_router, prefix="/api/v1")
+
+# Include WebSocket router
+app.include_router(websocket_router, prefix="/ws")
 
 @app.on_event("startup")
 async def startup_event():
