@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     # ==================== SECURITY ====================
     SECRET_KEY: str = "your-secret-key-change-this"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # ADR-018: 60 minutes for access token
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30     # ADR-018: 30 days for refresh token
 
     # ==================== CORS ====================
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3001", "http://localhost:3000", "http://localhost:3002", "http://localhost:5173"]
