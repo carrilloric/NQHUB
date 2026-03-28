@@ -1,0 +1,972 @@
+openapi: 3.1.0
+info:
+  title: Pattern Detection API Contract
+  version: 1.0.0
+  description: |
+    CONTRACT-002 - Pattern Detection REST API Specification
+
+    This contract defines the REST API endpoints for querying detected ICT patterns
+    including Fair Value Gaps (FVG), Order Blocks (OB), Liquidity Pools (LP),
+    Market State snapshots, and Pattern Interactions.
+
+    All endpoints are READ-ONLY and query the detected_* tables in the database.
+
+servers:
+  - url: http://localhost:8002/api/v1
+    description: Local development server
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FVGPattern:
+      type: object
+      required:
+        - id
+        - symbol
+        - timeframe
+        - formation_time
+        - gap_high
+        - gap_low
+        - gap_size_pts
+        - gap_size_pct
+        - significance
+        - status
+      properties:
+        id:
+          type: integer
+          description: Pattern ID
+        symbol:
+          type: string
+          description: Trading symbol (e.g., NQH25)
+        timeframe:
+          type: string
+          enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+        formation_time:
+          type: string
+          format: date-time
+          description: When the pattern formed (UTC)
+        gap_high:
+          type: number
+          format: float
+          description: Upper boundary of gap
+        gap_low:
+          type: number
+          format: float
+          description: Lower boundary of gap
+        gap_size_pts:
+          type: number
+          format: float
+          description: Gap size in points
+        gap_size_pct:
+          type: number
+          format: float
+          description: Gap size as percentage
+        significance:
+          type: string
+          enum: [MICRO, SMALL, MEDIUM, LARGE, EXTREME]
+        status:
+          type: string
+          enum: [UNMITIGATED, REDELIVERED, REBALANCED]
+        direction:
+          type: string
+          enum: [BULLISH, BEARISH]
+        premium_level:
+          type: number
+          format: float
+        discount_level:
+          type: number
+          format: float
+        consequent_encroachment:
+          type: number
+          format: float
+          description: 50% level (ICT concept)
+        displacement_score:
+          type: number
+          format: float
+        has_break_of_structure:
+          type: boolean
+        mitigation_time:
+          type: string
+          format: date-time
+          nullable: true
+        mitigation_candle_id:
+          type: integer
+          nullable: true
+
+    OrderBlockPattern:
+      type: object
+      required:
+        - id
+        - symbol
+        - timeframe
+        - formation_time
+        - ob_high
+        - ob_low
+        - ob_type
+        - quality
+        - status
+      properties:
+        id:
+          type: integer
+          description: Pattern ID
+        symbol:
+          type: string
+          description: Trading symbol
+        timeframe:
+          type: string
+          enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+        formation_time:
+          type: string
+          format: date-time
+        ob_high:
+          type: number
+          format: float
+        ob_low:
+          type: number
+          format: float
+        ob_type:
+          type: string
+          enum: [BULLISH OB, BEARISH OB, STRONG BULLISH OB, STRONG BEARISH OB]
+        quality:
+          type: string
+          enum: [HIGH, MEDIUM, LOW]
+        status:
+          type: string
+          enum: [ACTIVE, TESTED, BROKEN]
+        ob_body_midpoint:
+          type: number
+          format: float
+          description: 50% of candle body
+        ob_range_midpoint:
+          type: number
+          format: float
+          description: 50% of candle range
+        impulse_move:
+          type: number
+          format: float
+        impulse_direction:
+          type: string
+          enum: [UP, DOWN]
+        volume:
+          type: integer
+        test_time:
+          type: string
+          format: date-time
+          nullable: true
+        break_time:
+          type: string
+          format: date-time
+          nullable: true
+
+    LiquidityPoolPattern:
+      type: object
+      required:
+        - id
+        - symbol
+        - timeframe
+        - formation_time
+        - zone_high
+        - zone_low
+        - pool_type
+        - strength
+        - status
+      properties:
+        id:
+          type: integer
+          description: Pattern ID
+        symbol:
+          type: string
+        timeframe:
+          type: string
+          enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+        formation_time:
+          type: string
+          format: date-time
+        zone_high:
+          type: number
+          format: float
+        zone_low:
+          type: number
+          format: float
+        pool_type:
+          type: string
+          enum: [EQH, EQL, NYH, NYL, ASH, ASL, LSH, LSL, SWING_HIGH, SWING_LOW]
+        strength:
+          type: string
+          enum: [STRONG, NORMAL, WEAK]
+        status:
+          type: string
+          enum: [UNMITIGATED, RESPECTED, SWEPT, MITIGATED]
+        modal_level:
+          type: number
+          format: float
+          description: Price level with most touches
+        touches:
+          type: integer
+          description: Number of times price touched the zone
+        sweep_time:
+          type: string
+          format: date-time
+          nullable: true
+        mitigation_time:
+          type: string
+          format: date-time
+          nullable: true
+
+    MarketStateSnapshot:
+      type: object
+      required:
+        - timestamp
+        - symbol
+        - timeframe
+        - active_patterns
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Snapshot timestamp (UTC)
+        symbol:
+          type: string
+        timeframe:
+          type: string
+          enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+        current_price:
+          type: number
+          format: float
+        active_patterns:
+          type: object
+          properties:
+            fvgs:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  gap_high:
+                    type: number
+                    format: float
+                  gap_low:
+                    type: number
+                    format: float
+                  significance:
+                    type: string
+            order_blocks:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  ob_high:
+                    type: number
+                    format: float
+                  ob_low:
+                    type: number
+                    format: float
+                  ob_type:
+                    type: string
+            liquidity_pools:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  zone_high:
+                    type: number
+                    format: float
+                  zone_low:
+                    type: number
+                    format: float
+                  pool_type:
+                    type: string
+        summary:
+          type: object
+          properties:
+            total_active_fvgs:
+              type: integer
+            total_active_obs:
+              type: integer
+            total_active_lps:
+              type: integer
+            nearest_resistance:
+              type: number
+              format: float
+              nullable: true
+            nearest_support:
+              type: number
+              format: float
+              nullable: true
+
+    PatternInteraction:
+      type: object
+      required:
+        - id
+        - pattern_type
+        - pattern_id
+        - interaction_time
+        - interaction_type
+        - penetration_pts
+        - penetration_pct
+      properties:
+        id:
+          type: integer
+        pattern_type:
+          type: string
+          enum: [FVG, OB, LP]
+        pattern_id:
+          type: integer
+        interaction_time:
+          type: string
+          format: date-time
+        interaction_type:
+          type: string
+          enum: [R0, R1, R2, R3, R4, P1, P2, P3, P4, P5]
+          description: |
+            R0: Clean bounce (0% penetration)
+            R1: Shallow touch (0.1-10%)
+            R2: Moderate retest (10-25%)
+            R3: Deep retest (25-50%)
+            R4: Full retest (50-90%)
+            P1-P5: Penetration levels (breakout)
+        penetration_pts:
+          type: number
+          format: float
+        penetration_pct:
+          type: number
+          format: float
+        candle_high:
+          type: number
+          format: float
+        candle_low:
+          type: number
+          format: float
+        candle_close:
+          type: number
+          format: float
+        volume:
+          type: integer
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    PaginatedFVGResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FVGPattern'
+        total:
+          type: integer
+          description: Total number of records
+        page:
+          type: integer
+          description: Current page number (1-based)
+        page_size:
+          type: integer
+          description: Number of items per page
+        has_more:
+          type: boolean
+          description: Whether more pages exist
+
+    PaginatedOrderBlockResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderBlockPattern'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    PaginatedLiquidityPoolResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiquidityPoolPattern'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    PaginatedInteractionResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatternInteraction'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+        summary:
+          type: object
+          properties:
+            by_type:
+              type: object
+              additionalProperties:
+                type: integer
+              description: Count of interactions by type
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+        - code
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, NOT_FOUND, INTERNAL_ERROR, UNAUTHORIZED, FORBIDDEN]
+          description: Error code for client handling
+
+paths:
+  /patterns/fvgs:
+    get:
+      summary: Get Fair Value Gaps
+      description: |
+        Retrieve detected Fair Value Gaps with optional filters.
+        Queries the detected_fvg table.
+      operationId: getFairValueGaps
+      tags:
+        - Pattern Detection
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: NQH25
+          description: Trading symbol
+        - name: timeframe
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+            default: 5min
+          description: Candle timeframe
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [UNMITIGATED, REDELIVERED, REBALANCED]
+          description: Filter by pattern status
+        - name: significance
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [MICRO, SMALL, MEDIUM, LARGE, EXTREME]
+          description: Filter by significance level
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date for formation time filter (YYYY-MM-DD)
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date for formation time filter (YYYY-MM-DD)
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based)
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of items per page
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [formation_time, gap_size_pts, significance]
+            default: formation_time
+          description: Sort field
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFVGResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /patterns/order-blocks:
+    get:
+      summary: Get Order Blocks
+      description: |
+        Retrieve detected Order Blocks with optional filters.
+        Queries the detected_order_block table.
+      operationId: getOrderBlocks
+      tags:
+        - Pattern Detection
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: NQH25
+        - name: timeframe
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+            default: 5min
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVE, TESTED, BROKEN]
+          description: Filter by status
+        - name: ob_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [BULLISH OB, BEARISH OB, STRONG BULLISH OB, STRONG BEARISH OB]
+          description: Filter by OB type
+        - name: quality
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [HIGH, MEDIUM, LOW]
+          description: Filter by quality
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [formation_time, impulse_move, quality]
+            default: formation_time
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderBlockResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /patterns/liquidity-pools:
+    get:
+      summary: Get Liquidity Pools
+      description: |
+        Retrieve detected Liquidity Pools with optional filters.
+        Queries the detected_liquidity_pool table.
+      operationId: getLiquidityPools
+      tags:
+        - Pattern Detection
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: NQH25
+        - name: timeframe
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+            default: 5min
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [UNMITIGATED, RESPECTED, SWEPT, MITIGATED]
+        - name: pool_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [EQH, EQL, NYH, NYL, ASH, ASL, LSH, LSL, SWING_HIGH, SWING_LOW]
+          description: Filter by pool type
+        - name: strength
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [STRONG, NORMAL, WEAK]
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [formation_time, touches, strength]
+            default: formation_time
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLiquidityPoolResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /patterns/snapshot:
+    get:
+      summary: Get Market State Snapshot
+      description: |
+        Get a snapshot of all active patterns at a specific time or current time.
+        Provides a comprehensive view of the market structure.
+      operationId: getMarketStateSnapshot
+      tags:
+        - Pattern Detection
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: NQH25
+        - name: timeframe
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+            default: 5min
+        - name: timestamp
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: |
+            Specific timestamp for snapshot (ISO 8601).
+            If not provided, returns current market state.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketStateSnapshot'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /patterns/interactions:
+    get:
+      summary: Get Pattern Interactions
+      description: |
+        Retrieve all pattern interactions across all pattern types.
+        Queries the pattern_interaction table with optional filters.
+      operationId: getPatternInteractions
+      tags:
+        - Pattern Detection
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: NQH25
+        - name: pattern_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [FVG, OB, LP]
+          description: Filter by pattern type
+        - name: pattern_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by specific pattern ID
+        - name: interaction_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [R0, R1, R2, R3, R4, P1, P2, P3, P4, P5]
+          description: Filter by interaction type
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date for interaction time filter
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date for interaction time filter
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [interaction_time, penetration_pct, confidence]
+            default: interaction_time
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInteractionResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

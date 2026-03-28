@@ -1,7 +1,7 @@
 """API v1 Router"""
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
-    auth, invitations, candles, patterns, market_state, audit, system,
+    auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
     features, backtesting, ml, approval, bots, orders, risk, trades,
     settings, strategies, assistant, data_platform
 )
@@ -16,6 +16,9 @@ api_router.include_router(approval.router, prefix="/approval", tags=["approval"]
 
 # Data Platform API (CONTRACT-001)
 api_router.include_router(data_platform.router, prefix="/data", tags=["data-platform"])
+
+# Pattern Detection API (CONTRACT-002)
+api_router.include_router(pattern_detection.router, prefix="/patterns", tags=["pattern-detection"])
 
 # Data & Analysis
 api_router.include_router(candles.router, prefix="/candles", tags=["candles"])

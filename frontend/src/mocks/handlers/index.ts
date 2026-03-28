@@ -15,6 +15,7 @@ import { settingsHandlers } from './settings.handlers';
 import { strategiesHandlers } from './strategies.handlers';
 import { assistantHandlers } from './assistant.handlers';
 import { websocketHandlers } from './websocket.handlers';
+import { dataExplorerHandlers } from './data-explorer.handlers';
 
 export const handlers = [
   ...authHandlers,
@@ -30,4 +31,5 @@ export const handlers = [
   ...strategiesHandlers,
   ...assistantHandlers,
   ...websocketHandlers,
+  ...dataExplorerHandlers,
 ];
