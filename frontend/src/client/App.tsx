@@ -31,6 +31,7 @@ import Trades from "./pages/Trades";
 import Settings from "./pages/Settings";
 import Strategies from "./pages/Strategies";
 import Assistant from "./pages/Assistant";
+import { PatternDetection } from "./pages/PatternDetection";
 import { AppProvider, useAuth, Role } from "@/state/app";
 import { ServerTimeProvider } from "@/state/server-time";
 
@@ -103,6 +104,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DataExplorer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pattern-detection"
+              element={
+                <ProtectedRoute>
+                  <PatternDetection />
                 </ProtectedRoute>
               }
             />
