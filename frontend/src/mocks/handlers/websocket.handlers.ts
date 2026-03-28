@@ -40,26 +40,51 @@ const generateMockBarUpdate = (timeframe: string) => ({
   bot_id: '550e8400-e29b-41d4-a716-446655440000',
 });
 
-const generateMockPortfolioUpdate = () => ({
-  channel: 'portfolio',
-  event: 'portfolioUpdate',
-  data: {
-    balance: 50000,
-    equity: 51250.50,
-    unrealized_pnl: 1250.50,
-    realized_pnl_today: 875.25,
-    daily_trades: 15,
-    win_rate: 0.67,
-    max_drawdown: 1500.00,
-  },
-  timestamp: new Date().toISOString(),
-  bot_id: '550e8400-e29b-41d4-a716-446655440000',
-});
+const generateMockPortfolioUpdate = () => {
+  // Generate equity curve data (last 30 data points)
+  const equityCurve = [];
+  const drawdownSeries = [];
+  const baseEquity = 25000;
+
+  for (let i = 0; i < 30; i++) {
+    const trend = i * 20;
+    const noise = Math.sin(i * 0.5) * 200 + Math.random() * 100 - 50;
+    const equity = baseEquity + trend + noise;
+    const drawdown = Math.max(0, baseEquity + i * 30 - equity);
+
+    equityCurve.push({
+      time: new Date(Date.now() - (29 - i) * 60 * 60 * 1000).toISOString(),
+      equity: equity,
+    });
+
+    drawdownSeries.push(drawdown);
+  }
+
+  return {
+    channel: 'portfolio',
+    event: 'portfolioUpdate',
+    data: {
+      balance: 50000,
+      equity: 51250.50,
+      unrealized_pnl: 1250.50,
+      realized_pnl_today: 875.25,
+      daily_trades: 15,
+      win_rate: 0.67,
+      max_drawdown: 1500.00,
+      equity_curve: equityCurve,
+      drawdown_series: drawdownSeries,
+    },
+    timestamp: new Date().toISOString(),
+    bot_id: '550e8400-e29b-41d4-a716-446655440000',
+  };
+};
 
 const generateMockBotHeartbeat = () => ({
   channel: 'bot',
   event: 'botHeartbeat',
   data: {
+    bot_name: 'NQ Scalper Bot',
+    mode: 'paper', // or 'live'
     status: 'healthy',
     uptime_seconds: Math.floor(Math.random() * 3600) + 1800,
     memory_usage_mb: 256 + Math.random() * 128,
@@ -124,6 +149,32 @@ const generateMockCandleComplete = () => ({
   timestamp: new Date().toISOString(),
   bot_id: '550e8400-e29b-41d4-a716-446655440000',
 });
+
+const generateMockPositionUpdate = () => {
+  const side = Math.random() > 0.5 ? 'LONG' : 'SHORT';
+  const entryPrice = 20150.00 + Math.random() * 10 - 5;
+  const currentPrice = entryPrice + (side === 'LONG' ? 1 : -1) * (Math.random() * 5 - 2);
+  const quantity = Math.floor(Math.random() * 3) + 1;
+  const unrealizedPnl = side === 'LONG'
+    ? (currentPrice - entryPrice) * quantity * 20  // NQ point value is $20
+    : (entryPrice - currentPrice) * quantity * 20;
+
+  return {
+    channel: 'positions',
+    event: 'positionUpdated',
+    data: {
+      position_id: crypto.randomUUID(),
+      symbol: 'NQH25',
+      side,
+      quantity,
+      entry_price: entryPrice,
+      current_price: currentPrice,
+      unrealized_pnl: unrealizedPnl,
+    },
+    timestamp: new Date().toISOString(),
+    bot_id: '550e8400-e29b-41d4-a716-446655440000',
+  };
+};
 
 export const websocketHandlers = [
   liveWs.addEventListener('connection', ({ client }) => {
@@ -233,21 +284,7 @@ export const websocketHandlers = [
               // Send position updates (throttled to 1/sec)
               const positionInterval = setInterval(() => {
                 if (subscribedChannels.has('positions') && Math.random() < 0.1) {
-                  client.send(JSON.stringify({
-                    channel: 'positions',
-                    event: 'positionUpdated',
-                    data: {
-                      position_id: crypto.randomUUID(),
-                      symbol: 'NQH25',
-                      side: 'LONG',
-                      quantity: 2,
-                      entry_price: 20150.00,
-                      current_price: 20152.50,
-                      unrealized_pnl: 125.00,
-                    },
-                    timestamp: new Date().toISOString(),
-                    bot_id: '550e8400-e29b-41d4-a716-446655440000',
-                  }));
+                  client.send(JSON.stringify(generateMockPositionUpdate()));
                 }
               }, 1000);
               intervals.set('positions', positionInterval);
