@@ -1,0 +1,1106 @@
+openapi: 3.1.0
+info:
+  title: NQ-HUB Live Trading API
+  version: 1.0.0
+  description: Contract-first OpenAPI specification for NQ-HUB Live Trading endpoints (Feature 4)
+  contact:
+    name: AUTOMATION LABS TEAM
+    email: support@automation-labs.ai
+  license:
+    name: Proprietary
+    url: https://automation-labs.ai/license
+
+servers:
+  - url: http://localhost:8002
+    description: Development server
+  - url: https://api.nqhub.automation-labs.ai
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Bots
+    description: Bot lifecycle management
+  - name: Kill Switch
+    description: Emergency stop functionality (HIGHEST PRIORITY)
+  - name: Orders
+    description: Order management
+  - name: Risk
+    description: Risk configuration and monitoring
+
+paths:
+  # ==================== BOT MANAGEMENT ====================
+  /api/v1/bots:
+    get:
+      summary: List all bots
+      operationId: listBots
+      tags:
+        - Bots
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['stopped', 'running', 'killed', 'error']
+          description: Filter by bot status
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['live', 'paper', 'simulation']
+          description: Filter by trading mode
+      responses:
+        '200':
+          description: List of bots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BotsListResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/BotsListExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bots/create:
+    post:
+      summary: Create a new bot
+      operationId: createBot
+      tags:
+        - Bots
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBotRequest'
+            examples:
+              default:
+                $ref: '#/components/examples/CreateBotRequestExample'
+      responses:
+        '201':
+          description: Bot created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBotResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/CreateBotResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bots/{id}/start:
+    post:
+      summary: Start a bot
+      operationId: startBot
+      tags:
+        - Bots
+      parameters:
+        - $ref: '#/components/parameters/BotIdParam'
+      responses:
+        '200':
+          description: Bot started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BotStatusResponse'
+              examples:
+                default:
+                  value:
+                    bot_id: "550e8400-e29b-41d4-a716-446655440000"
+                    status: "running"
+                    last_heartbeat: "2024-11-29T10:30:00Z"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bots/{id}/stop:
+    post:
+      summary: Stop a bot gracefully
+      operationId: stopBot
+      tags:
+        - Bots
+      parameters:
+        - $ref: '#/components/parameters/BotIdParam'
+      responses:
+        '200':
+          description: Bot stopped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BotStatusResponse'
+              examples:
+                default:
+                  value:
+                    bot_id: "550e8400-e29b-41d4-a716-446655440000"
+                    status: "stopped"
+                    last_heartbeat: "2024-11-29T10:30:00Z"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== KILL SWITCH (HIGHEST PRIORITY) ====================
+  /api/v1/bots/{id}/kill:
+    post:
+      summary: Kill a bot immediately (HIGHEST PRIORITY)
+      operationId: killBot
+      tags:
+        - Kill Switch
+      parameters:
+        - $ref: '#/components/parameters/BotIdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for killing the bot
+                close_positions:
+                  type: boolean
+                  default: true
+                  description: Whether to close all open positions immediately
+      responses:
+        '200':
+          description: Bot killed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillResponse'
+              examples:
+                default:
+                  value:
+                    bot_id: "550e8400-e29b-41d4-a716-446655440000"
+                    status: "killed"
+                    positions_closed: 3
+                    orders_cancelled: 5
+                    timestamp: "2024-11-29T10:30:00Z"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bots/kill-all:
+    post:
+      summary: Kill all bots immediately (GLOBAL KILL SWITCH - HIGHEST PRIORITY)
+      operationId: killAllBots
+      tags:
+        - Kill Switch
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for global kill
+                close_positions:
+                  type: boolean
+                  default: true
+                  description: Whether to close all open positions immediately
+                confirm:
+                  type: string
+                  pattern: '^KILL_ALL_BOTS$'
+                  description: Safety confirmation string (must be "KILL_ALL_BOTS")
+      responses:
+        '200':
+          description: All bots killed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillAllResponse'
+              examples:
+                default:
+                  value:
+                    killed_count: 12
+                    positions_closed_total: 45
+                    orders_cancelled_total: 78
+                    timestamp: "2024-11-29T10:30:00Z"
+                    affected_bots:
+                      - bot_id: "550e8400-e29b-41d4-a716-446655440000"
+                        positions_closed: 3
+                        orders_cancelled: 5
+                      - bot_id: "660e8400-e29b-41d4-a716-446655440001"
+                        positions_closed: 2
+                        orders_cancelled: 8
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/bots/{id}/state-log:
+    get:
+      summary: Get bot state transition log
+      operationId: getBotStateLog
+      tags:
+        - Bots
+      parameters:
+        - $ref: '#/components/parameters/BotIdParam'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+          description: Number of state transitions to return
+      responses:
+        '200':
+          description: Bot state transition log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateLogResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/StateLogExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== ORDER MANAGEMENT ====================
+  /api/v1/orders:
+    get:
+      summary: List orders
+      operationId: listOrders
+      tags:
+        - Orders
+      parameters:
+        - name: bot_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by bot ID
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['pending', 'submitted', 'filled', 'cancelled', 'rejected']
+          description: Filter by order status
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Start date (ISO 8601)
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: End date (ISO 8601)
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersListResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/OrdersListExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/orders/{id}:
+    get:
+      summary: Get order details
+      operationId: getOrder
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Order ID
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                default:
+                  $ref: '#/components/examples/OrderExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/orders/pending:
+    get:
+      summary: List pending orders
+      operationId: listPendingOrders
+      tags:
+        - Orders
+      parameters:
+        - name: bot_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by bot ID
+      responses:
+        '200':
+          description: List of pending orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersListResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/PendingOrdersExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== RISK MANAGEMENT ====================
+  /api/v1/risk/config:
+    get:
+      summary: Get risk configuration
+      operationId: getRiskConfig
+      tags:
+        - Risk
+      responses:
+        '200':
+          description: Current risk configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskConfig'
+              examples:
+                default:
+                  $ref: '#/components/examples/RiskConfigExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update risk configuration
+      operationId: updateRiskConfig
+      tags:
+        - Risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskConfig'
+            examples:
+              default:
+                $ref: '#/components/examples/RiskConfigExample'
+      responses:
+        '200':
+          description: Risk configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskConfig'
+              examples:
+                default:
+                  $ref: '#/components/examples/RiskConfigExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/risk/status:
+    get:
+      summary: Get real-time risk status
+      operationId: getRiskStatus
+      tags:
+        - Risk
+      responses:
+        '200':
+          description: Current risk status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskStatus'
+              examples:
+                default:
+                  $ref: '#/components/examples/RiskStatusExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/risk/apex-accounts:
+    get:
+      summary: List Apex accounts
+      operationId: listApexAccounts
+      tags:
+        - Risk
+      responses:
+        '200':
+          description: List of Apex accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApexAccountsResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/ApexAccountsExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Add Apex account
+      operationId: addApexAccount
+      tags:
+        - Risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApexAccount'
+            examples:
+              default:
+                $ref: '#/components/examples/ApexAccountExample'
+      responses:
+        '201':
+          description: Apex account added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApexAccount'
+              examples:
+                default:
+                  $ref: '#/components/examples/ApexAccountExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  parameters:
+    BotIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Bot ID
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000
+        default: 100
+      description: Number of results to return
+
+    OffsetParam:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Offset for pagination
+
+  schemas:
+    # ==================== BOT SCHEMAS ====================
+    Bot:
+      type: object
+      required:
+        - id
+        - name
+        - strategy_id
+        - status
+        - mode
+        - last_heartbeat
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        strategy_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: ['stopped', 'running', 'killed', 'error']
+        mode:
+          type: string
+          enum: ['live', 'paper', 'simulation']
+        last_heartbeat:
+          type: string
+          format: date-time
+        apex_account_id:
+          type: string
+          format: uuid
+        active_params:
+          type: object
+          additionalProperties: true
+
+    BotsListResponse:
+      type: object
+      required:
+        - bots
+      properties:
+        bots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bot'
+
+    CreateBotRequest:
+      type: object
+      required:
+        - name
+        - strategy_id
+        - mode
+      properties:
+        name:
+          type: string
+        strategy_id:
+          type: string
+          format: uuid
+        approval_id:
+          type: string
+          format: uuid
+        apex_account_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: ['live', 'paper', 'simulation']
+        active_params:
+          type: object
+          additionalProperties: true
+
+    CreateBotResponse:
+      type: object
+      required:
+        - bot_id
+        - status
+      properties:
+        bot_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: ['stopped']
+
+    BotStatusResponse:
+      type: object
+      required:
+        - bot_id
+        - status
+        - last_heartbeat
+      properties:
+        bot_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: ['stopped', 'running', 'killed', 'error']
+        last_heartbeat:
+          type: string
+          format: date-time
+
+    KillResponse:
+      type: object
+      required:
+        - bot_id
+        - status
+        - positions_closed
+        - orders_cancelled
+        - timestamp
+      properties:
+        bot_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: ['killed']
+        positions_closed:
+          type: integer
+        orders_cancelled:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    KillAllResponse:
+      type: object
+      required:
+        - killed_count
+        - positions_closed_total
+        - orders_cancelled_total
+        - timestamp
+        - affected_bots
+      properties:
+        killed_count:
+          type: integer
+        positions_closed_total:
+          type: integer
+        orders_cancelled_total:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        affected_bots:
+          type: array
+          items:
+            type: object
+            required:
+              - bot_id
+              - positions_closed
+              - orders_cancelled
+            properties:
+              bot_id:
+                type: string
+                format: uuid
+              positions_closed:
+                type: integer
+              orders_cancelled:
+                type: integer
+
+    StateLogResponse:
+      type: object
+      required:
+        - states
+      properties:
+        states:
+          type: array
+          items:
+            type: object
+            required:
+              - from
+              - to
+              - reason
+              - timestamp
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              reason:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+
+    # ==================== ORDER SCHEMAS ====================
+    Order:
+      type: object
+      required:
+        - id
+        - bot_id
+        - symbol
+        - side
+        - quantity
+        - order_type
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        bot_id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        side:
+          type: string
+          enum: ['BUY', 'SELL']
+        quantity:
+          type: integer
+        order_type:
+          type: string
+          enum: ['MARKET', 'LIMIT', 'STOP', 'STOP_LIMIT']
+        limit_price:
+          type: number
+          format: float
+        stop_price:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: ['pending', 'submitted', 'filled', 'cancelled', 'rejected']
+        filled_quantity:
+          type: integer
+        average_fill_price:
+          type: number
+          format: float
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        filled_at:
+          type: string
+          format: date-time
+
+    OrdersListResponse:
+      type: object
+      required:
+        - orders
+        - total
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    # ==================== RISK SCHEMAS ====================
+    RiskConfig:
+      type: object
+      required:
+        - max_daily_loss_usd
+        - max_trailing_drawdown_usd
+        - max_position_size
+        - max_open_positions
+      properties:
+        max_daily_loss_usd:
+          type: number
+          format: float
+        max_trailing_drawdown_usd:
+          type: number
+          format: float
+        max_position_size:
+          type: integer
+        max_open_positions:
+          type: integer
+        circuit_breaker_threshold_pct:
+          type: number
+          format: float
+          default: 90
+        kill_switch_enabled:
+          type: boolean
+          default: true
+
+    RiskStatus:
+      type: object
+      required:
+        - daily_loss_usd
+        - trailing_drawdown_proximity_pct
+        - circuit_breaker_active
+        - open_positions
+        - total_exposure
+      properties:
+        daily_loss_usd:
+          type: number
+          format: float
+        trailing_drawdown_proximity_pct:
+          type: number
+          format: float
+        circuit_breaker_active:
+          type: boolean
+        open_positions:
+          type: integer
+        total_exposure:
+          type: number
+          format: float
+        last_risk_check:
+          type: string
+          format: date-time
+
+    ApexAccount:
+      type: object
+      required:
+        - id
+        - account_number
+        - account_name
+        - balance
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_number:
+          type: string
+        account_name:
+          type: string
+        balance:
+          type: number
+          format: float
+        active:
+          type: boolean
+          default: true
+
+    ApexAccountsResponse:
+      type: object
+      required:
+        - accounts
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApexAccount'
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                default: "Not authenticated"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+
+    Conflict:
+      description: Conflict with current state
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+
+  examples:
+    BotsListExample:
+      value:
+        bots:
+          - id: "550e8400-e29b-41d4-a716-446655440000"
+            name: "Scalping Bot 1"
+            strategy_id: "123e4567-e89b-12d3-a456-426614174000"
+            status: "running"
+            mode: "live"
+            last_heartbeat: "2024-11-29T10:30:00Z"
+            apex_account_id: "789e0123-e89b-12d3-a456-426614174000"
+            active_params:
+              stop_loss: 50
+              take_profit: 100
+              position_size: 2
+          - id: "660e8400-e29b-41d4-a716-446655440001"
+            name: "Trend Following Bot"
+            strategy_id: "234e5678-e89b-12d3-a456-426614174001"
+            status: "stopped"
+            mode: "paper"
+            last_heartbeat: "2024-11-29T10:25:00Z"
+
+    CreateBotRequestExample:
+      value:
+        name: "Scalping Bot 1"
+        strategy_id: "123e4567-e89b-12d3-a456-426614174000"
+        apex_account_id: "789e0123-e89b-12d3-a456-426614174000"
+        mode: "live"
+        active_params:
+          stop_loss: 50
+          take_profit: 100
+          position_size: 2
+
+    CreateBotResponseExample:
+      value:
+        bot_id: "550e8400-e29b-41d4-a716-446655440000"
+        status: "stopped"
+
+    StateLogExample:
+      value:
+        states:
+          - from: "stopped"
+            to: "running"
+            reason: "User initiated start"
+            timestamp: "2024-11-29T10:00:00Z"
+          - from: "running"
+            to: "error"
+            reason: "Connection lost to Rithmic"
+            timestamp: "2024-11-29T10:15:00Z"
+          - from: "error"
+            to: "running"
+            reason: "Connection restored"
+            timestamp: "2024-11-29T10:16:00Z"
+          - from: "running"
+            to: "killed"
+            reason: "Risk limit exceeded - circuit breaker triggered"
+            timestamp: "2024-11-29T10:30:00Z"
+
+    OrdersListExample:
+      value:
+        orders:
+          - id: "abc12345-e89b-12d3-a456-426614174000"
+            bot_id: "550e8400-e29b-41d4-a716-446655440000"
+            symbol: "NQH25"
+            side: "BUY"
+            quantity: 2
+            order_type: "LIMIT"
+            limit_price: 20150.50
+            status: "filled"
+            filled_quantity: 2
+            average_fill_price: 20150.25
+            created_at: "2024-11-29T10:00:00Z"
+            updated_at: "2024-11-29T10:00:05Z"
+            filled_at: "2024-11-29T10:00:05Z"
+        total: 1
+        offset: 0
+        limit: 100
+
+    PendingOrdersExample:
+      value:
+        orders:
+          - id: "def45678-e89b-12d3-a456-426614174001"
+            bot_id: "550e8400-e29b-41d4-a716-446655440000"
+            symbol: "NQH25"
+            side: "SELL"
+            quantity: 2
+            order_type: "LIMIT"
+            limit_price: 20200.00
+            status: "pending"
+            created_at: "2024-11-29T10:30:00Z"
+        total: 1
+        offset: 0
+        limit: 100
+
+    OrderExample:
+      value:
+        id: "abc12345-e89b-12d3-a456-426614174000"
+        bot_id: "550e8400-e29b-41d4-a716-446655440000"
+        symbol: "NQH25"
+        side: "BUY"
+        quantity: 2
+        order_type: "LIMIT"
+        limit_price: 20150.50
+        status: "filled"
+        filled_quantity: 2
+        average_fill_price: 20150.25
+        created_at: "2024-11-29T10:00:00Z"
+        updated_at: "2024-11-29T10:00:05Z"
+        filled_at: "2024-11-29T10:00:05Z"
+
+    RiskConfigExample:
+      value:
+        max_daily_loss_usd: 2500.00
+        max_trailing_drawdown_usd: 5000.00
+        max_position_size: 5
+        max_open_positions: 3
+        circuit_breaker_threshold_pct: 90
+        kill_switch_enabled: true
+
+    RiskStatusExample:
+      value:
+        daily_loss_usd: 1250.50
+        trailing_drawdown_proximity_pct: 50.02
+        circuit_breaker_active: false
+        open_positions: 2
+        total_exposure: 403000.00
+        last_risk_check: "2024-11-29T10:30:00Z"
+
+    ApexAccountExample:
+      value:
+        id: "789e0123-e89b-12d3-a456-426614174000"
+        account_number: "PA-12345678"
+        account_name: "Main Trading Account"
+        balance: 50000.00
+        active: true
+
+    ApexAccountsExample:
+      value:
+        accounts:
+          - id: "789e0123-e89b-12d3-a456-426614174000"
+            account_number: "PA-12345678"
+            account_name: "Main Trading Account"
+            balance: 50000.00
+            active: true
+          - id: "890e1234-e89b-12d3-a456-426614174001"
+            account_number: "PA-87654321"
+            account_name: "Backup Account"
+            balance: 25000.00
+            active: false
