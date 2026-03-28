@@ -25,6 +25,7 @@ import BacktestingAI from "./pages/BacktestingAI";
 import MachineLearning from "./pages/MachineLearning";
 import Approval from "./pages/Approval";
 import Bot from "./pages/Bot";
+import BotManagement from "./pages/BotManagement";
 import Orders from "./pages/Orders";
 import RiskManagement from "./pages/RiskManagement";
 import Trades from "./pages/Trades";
@@ -32,6 +33,7 @@ import Settings from "./pages/Settings";
 import Strategies from "./pages/Strategies";
 import Assistant from "./pages/Assistant";
 import { PatternDetection } from "./pages/PatternDetection";
+import LiveDashboard from "./pages/LiveDashboard";
 import { AppProvider, useAuth, Role } from "@/state/app";
 import { ServerTimeProvider } from "@/state/server-time";
 
@@ -80,6 +82,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/live-dashboard"
+              element={
+                <ProtectedRoute>
+                  <LiveDashboard />
                 </ProtectedRoute>
               }
             />
@@ -168,6 +178,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Bot />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bot-management"
+              element={
+                <ProtectedRoute>
+                  <BotManagement />
                 </ProtectedRoute>
               }
             />
