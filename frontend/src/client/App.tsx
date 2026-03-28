@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import DataModule from "./pages/DataModule";
+import DataExplorer from "./pages/DataExplorer";
 import StatisticalAnalysis from "./pages/StatisticalAnalysis";
 import WithLayout from "./pages/Placeholders";
 import ChartTest from "./pages/ChartTest";
@@ -94,6 +95,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DataModule defaultTab="charts" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/data-explorer"
+              element={
+                <ProtectedRoute>
+                  <DataExplorer />
                 </ProtectedRoute>
               }
             />
