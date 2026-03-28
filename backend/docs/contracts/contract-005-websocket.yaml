@@ -1,0 +1,961 @@
+asyncapi: 3.0.0
+info:
+  title: NQ-HUB WebSocket API
+  version: 1.0.0
+  description: AsyncAPI specification for NQ-HUB WebSocket real-time channels (Feature 4)
+  contact:
+    name: AUTOMATION LABS TEAM
+    email: support@automation-labs.ai
+  license:
+    name: Proprietary
+    url: https://automation-labs.ai/license
+
+servers:
+  development:
+    host: localhost:8002
+    protocol: ws
+    description: Development WebSocket server
+    security:
+      - $ref: '#/components/securitySchemes/token'
+  production:
+    host: ws.nqhub.automation-labs.ai
+    protocol: wss
+    description: Production WebSocket server
+    security:
+      - $ref: '#/components/securitySchemes/token'
+
+defaultContentType: application/json
+
+channels:
+  # ==================== CONNECTION ====================
+  connection:
+    address: /ws/live
+    messages:
+      connectionEstablished:
+        $ref: '#/components/messages/connectionEstablished'
+      heartbeat:
+        $ref: '#/components/messages/heartbeat'
+    bindings:
+      ws:
+        query:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT authentication token
+          required:
+            - token
+
+  # ==================== PRICE CHANNEL ====================
+  price:
+    address: price
+    messages:
+      barUpdate:
+        $ref: '#/components/messages/barUpdate'
+      tick:
+        $ref: '#/components/messages/tick'
+    description: Real-time price updates
+    bindings:
+      ws:
+        bindingVersion: 0.1.0
+
+  # ==================== ORDERFLOW CHANNEL ====================
+  orderflow:
+    address: orderflow
+    messages:
+      candleComplete:
+        $ref: '#/components/messages/candleComplete'
+    description: Completed candles with order flow data
+
+  # ==================== PATTERNS CHANNEL ====================
+  patterns:
+    address: patterns
+    messages:
+      patternDetected:
+        $ref: '#/components/messages/patternDetected'
+      patternStatusChange:
+        $ref: '#/components/messages/patternStatusChange'
+      patternInteraction:
+        $ref: '#/components/messages/patternInteraction'
+    description: Pattern detection and interaction events
+
+  # ==================== ORDERS CHANNEL ====================
+  orders:
+    address: orders
+    messages:
+      orderSubmitted:
+        $ref: '#/components/messages/orderSubmitted'
+      orderFilled:
+        $ref: '#/components/messages/orderFilled'
+      orderCancelled:
+        $ref: '#/components/messages/orderCancelled'
+      orderRejected:
+        $ref: '#/components/messages/orderRejected'
+    description: Order lifecycle events
+
+  # ==================== POSITIONS CHANNEL ====================
+  positions:
+    address: positions
+    messages:
+      positionOpened:
+        $ref: '#/components/messages/positionOpened'
+      positionUpdated:
+        $ref: '#/components/messages/positionUpdated'
+      positionClosed:
+        $ref: '#/components/messages/positionClosed'
+    description: Position lifecycle events
+    bindings:
+      ws:
+        bindingVersion: 0.1.0
+
+  # ==================== PORTFOLIO CHANNEL ====================
+  portfolio:
+    address: portfolio
+    messages:
+      portfolioUpdate:
+        $ref: '#/components/messages/portfolioUpdate'
+    description: Portfolio metrics updates (5 second intervals)
+
+  # ==================== RISK CHANNEL ====================
+  risk:
+    address: risk
+    messages:
+      circuitBreakerTriggered:
+        $ref: '#/components/messages/circuitBreakerTriggered'
+      killSwitchActivated:
+        $ref: '#/components/messages/killSwitchActivated'
+    description: Risk management critical events (HIGHEST PRIORITY)
+
+  # ==================== BOT CHANNEL ====================
+  bot:
+    address: bot
+    messages:
+      botStatusChange:
+        $ref: '#/components/messages/botStatusChange'
+      botHeartbeat:
+        $ref: '#/components/messages/botHeartbeat'
+    description: Bot status and health monitoring
+
+  # ==================== CONTROL CHANNEL ====================
+  control:
+    address: control
+    messages:
+      subscribe:
+        $ref: '#/components/messages/subscribe'
+      unsubscribe:
+        $ref: '#/components/messages/unsubscribe'
+      subscribed:
+        $ref: '#/components/messages/subscribed'
+      unsubscribed:
+        $ref: '#/components/messages/unsubscribed'
+      error:
+        $ref: '#/components/messages/error'
+    description: Channel subscription management
+
+operations:
+  # Client operations (send)
+  sendSubscribe:
+    action: send
+    channel:
+      $ref: '#/channels/control'
+    messages:
+      - $ref: '#/components/messages/subscribe'
+
+  sendUnsubscribe:
+    action: send
+    channel:
+      $ref: '#/channels/control'
+    messages:
+      - $ref: '#/components/messages/unsubscribe'
+
+  # Server operations (receive)
+  receiveBarUpdate:
+    action: receive
+    channel:
+      $ref: '#/channels/price'
+    messages:
+      - $ref: '#/components/messages/barUpdate'
+    bindings:
+      ws:
+        throttle:
+          rate: 10
+          per: second
+          description: Tick updates throttled to maximum 10 per second
+
+  receiveTick:
+    action: receive
+    channel:
+      $ref: '#/channels/price'
+    messages:
+      - $ref: '#/components/messages/tick'
+    bindings:
+      ws:
+        throttle:
+          rate: 10
+          per: second
+
+  receiveCandleComplete:
+    action: receive
+    channel:
+      $ref: '#/channels/orderflow'
+    messages:
+      - $ref: '#/components/messages/candleComplete'
+
+  receivePatternEvents:
+    action: receive
+    channel:
+      $ref: '#/channels/patterns'
+    messages:
+      - $ref: '#/components/messages/patternDetected'
+      - $ref: '#/components/messages/patternStatusChange'
+      - $ref: '#/components/messages/patternInteraction'
+
+  receiveOrderEvents:
+    action: receive
+    channel:
+      $ref: '#/channels/orders'
+    messages:
+      - $ref: '#/components/messages/orderSubmitted'
+      - $ref: '#/components/messages/orderFilled'
+      - $ref: '#/components/messages/orderCancelled'
+      - $ref: '#/components/messages/orderRejected'
+
+  receivePositionEvents:
+    action: receive
+    channel:
+      $ref: '#/channels/positions'
+    messages:
+      - $ref: '#/components/messages/positionOpened'
+      - $ref: '#/components/messages/positionUpdated'
+      - $ref: '#/components/messages/positionClosed'
+    bindings:
+      ws:
+        throttle:
+          rate: 1
+          per: second
+          description: Position updates throttled to maximum 1 per second
+
+  receivePortfolioUpdate:
+    action: receive
+    channel:
+      $ref: '#/channels/portfolio'
+    messages:
+      - $ref: '#/components/messages/portfolioUpdate'
+
+  receiveRiskEvents:
+    action: receive
+    channel:
+      $ref: '#/channels/risk'
+    messages:
+      - $ref: '#/components/messages/circuitBreakerTriggered'
+      - $ref: '#/components/messages/killSwitchActivated'
+
+  receiveBotEvents:
+    action: receive
+    channel:
+      $ref: '#/channels/bot'
+    messages:
+      - $ref: '#/components/messages/botStatusChange'
+      - $ref: '#/components/messages/botHeartbeat'
+
+components:
+  securitySchemes:
+    token:
+      type: httpApiKey
+      in: query
+      name: token
+      description: JWT token passed as query parameter
+
+  messages:
+    # ==================== CONNECTION MESSAGES ====================
+    connectionEstablished:
+      name: connectionEstablished
+      title: Connection Established
+      payload:
+        $ref: '#/components/schemas/ConnectionEstablished'
+
+    heartbeat:
+      name: heartbeat
+      title: Heartbeat
+      payload:
+        $ref: '#/components/schemas/Heartbeat'
+      description: Sent every 30 seconds to maintain connection
+
+    # ==================== PRICE MESSAGES ====================
+    barUpdate:
+      name: barUpdate
+      title: Bar Update
+      payload:
+        $ref: '#/components/schemas/BarUpdate'
+
+    tick:
+      name: tick
+      title: Price Tick
+      payload:
+        $ref: '#/components/schemas/Tick'
+      description: Real-time tick data (throttled to 10/sec)
+
+    # ==================== ORDERFLOW MESSAGES ====================
+    candleComplete:
+      name: candleComplete
+      title: Candle Complete
+      payload:
+        $ref: '#/components/schemas/CandleComplete'
+
+    # ==================== PATTERN MESSAGES ====================
+    patternDetected:
+      name: patternDetected
+      title: Pattern Detected
+      payload:
+        $ref: '#/components/schemas/PatternDetected'
+
+    patternStatusChange:
+      name: patternStatusChange
+      title: Pattern Status Change
+      payload:
+        $ref: '#/components/schemas/PatternStatusChange'
+
+    patternInteraction:
+      name: patternInteraction
+      title: Pattern Interaction
+      payload:
+        $ref: '#/components/schemas/PatternInteraction'
+
+    # ==================== ORDER MESSAGES ====================
+    orderSubmitted:
+      name: orderSubmitted
+      title: Order Submitted
+      payload:
+        $ref: '#/components/schemas/OrderEvent'
+
+    orderFilled:
+      name: orderFilled
+      title: Order Filled
+      payload:
+        $ref: '#/components/schemas/OrderEvent'
+
+    orderCancelled:
+      name: orderCancelled
+      title: Order Cancelled
+      payload:
+        $ref: '#/components/schemas/OrderEvent'
+
+    orderRejected:
+      name: orderRejected
+      title: Order Rejected
+      payload:
+        $ref: '#/components/schemas/OrderEvent'
+
+    # ==================== POSITION MESSAGES ====================
+    positionOpened:
+      name: positionOpened
+      title: Position Opened
+      payload:
+        $ref: '#/components/schemas/PositionEvent'
+
+    positionUpdated:
+      name: positionUpdated
+      title: Position Updated
+      payload:
+        $ref: '#/components/schemas/PositionEvent'
+      description: Throttled to 1 per second
+
+    positionClosed:
+      name: positionClosed
+      title: Position Closed
+      payload:
+        $ref: '#/components/schemas/PositionEvent'
+
+    # ==================== PORTFOLIO MESSAGE ====================
+    portfolioUpdate:
+      name: portfolioUpdate
+      title: Portfolio Update
+      payload:
+        $ref: '#/components/schemas/PortfolioUpdate'
+      description: Sent every 5 seconds
+
+    # ==================== RISK MESSAGES ====================
+    circuitBreakerTriggered:
+      name: circuitBreakerTriggered
+      title: Circuit Breaker Triggered
+      payload:
+        $ref: '#/components/schemas/CircuitBreakerEvent'
+
+    killSwitchActivated:
+      name: killSwitchActivated
+      title: Kill Switch Activated (HIGHEST PRIORITY)
+      payload:
+        $ref: '#/components/schemas/KillSwitchEvent'
+      priority: CRITICAL
+
+    # ==================== BOT MESSAGES ====================
+    botStatusChange:
+      name: botStatusChange
+      title: Bot Status Change
+      payload:
+        $ref: '#/components/schemas/BotStatusChange'
+
+    botHeartbeat:
+      name: botHeartbeat
+      title: Bot Heartbeat
+      payload:
+        $ref: '#/components/schemas/BotHeartbeat'
+      description: Sent every 30 seconds
+
+    # ==================== CONTROL MESSAGES ====================
+    subscribe:
+      name: subscribe
+      title: Subscribe to Channels
+      payload:
+        $ref: '#/components/schemas/SubscribeRequest'
+
+    unsubscribe:
+      name: unsubscribe
+      title: Unsubscribe from Channels
+      payload:
+        $ref: '#/components/schemas/UnsubscribeRequest'
+
+    subscribed:
+      name: subscribed
+      title: Subscription Confirmed
+      payload:
+        $ref: '#/components/schemas/SubscribedResponse'
+
+    unsubscribed:
+      name: unsubscribed
+      title: Unsubscription Confirmed
+      payload:
+        $ref: '#/components/schemas/UnsubscribedResponse'
+
+    error:
+      name: error
+      title: Error Message
+      payload:
+        $ref: '#/components/schemas/ErrorMessage'
+
+  schemas:
+    # ==================== BASE MESSAGE SCHEMA ====================
+    BaseMessage:
+      type: object
+      required:
+        - channel
+        - event
+        - data
+        - timestamp
+        - bot_id
+      properties:
+        channel:
+          type: string
+        event:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        bot_id:
+          type: string
+          format: uuid
+
+    # ==================== CONNECTION SCHEMAS ====================
+    ConnectionEstablished:
+      type: object
+      required:
+        - session_id
+        - server_time
+        - version
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        server_time:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    Heartbeat:
+      type: object
+      required:
+        - timestamp
+        - sequence
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        sequence:
+          type: integer
+
+    # ==================== PRICE SCHEMAS ====================
+    BarUpdate:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - symbol
+                - timeframe
+                - open
+                - high
+                - low
+                - close
+                - volume
+              properties:
+                symbol:
+                  type: string
+                timeframe:
+                  type: string
+                  enum: ['1min', '5min', '15min', '30min', '1hour', '4hour', '1day']
+                open:
+                  type: number
+                high:
+                  type: number
+                low:
+                  type: number
+                close:
+                  type: number
+                volume:
+                  type: integer
+
+    Tick:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - symbol
+                - price
+                - size
+                - side
+              properties:
+                symbol:
+                  type: string
+                price:
+                  type: number
+                size:
+                  type: integer
+                side:
+                  type: string
+                  enum: ['BUY', 'SELL']
+
+    # ==================== ORDERFLOW SCHEMA ====================
+    CandleComplete:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - timestamp
+                - timeframe
+                - oflow_unit
+                - delta
+                - poc
+                - value_area_high
+                - value_area_low
+              properties:
+                timestamp:
+                  type: string
+                  format: date-time
+                timeframe:
+                  type: string
+                oflow_unit:
+                  type: object
+                  description: Order flow footprint data
+                delta:
+                  type: integer
+                poc:
+                  type: number
+                  description: Point of Control
+                value_area_high:
+                  type: number
+                value_area_low:
+                  type: number
+
+    # ==================== PATTERN SCHEMAS ====================
+    PatternDetected:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - pattern_id
+                - pattern_type
+                - formation_time
+                - significance
+              properties:
+                pattern_id:
+                  type: string
+                  format: uuid
+                pattern_type:
+                  type: string
+                  enum: ['FVG', 'LIQUIDITY_POOL', 'ORDER_BLOCK']
+                formation_time:
+                  type: string
+                  format: date-time
+                significance:
+                  type: string
+                  enum: ['MICRO', 'SMALL', 'MEDIUM', 'LARGE', 'EXTREME']
+                details:
+                  type: object
+
+    PatternStatusChange:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - pattern_id
+                - old_status
+                - new_status
+              properties:
+                pattern_id:
+                  type: string
+                  format: uuid
+                old_status:
+                  type: string
+                new_status:
+                  type: string
+
+    PatternInteraction:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - pattern_id
+                - interaction_type
+                - price_at_interaction
+              properties:
+                pattern_id:
+                  type: string
+                  format: uuid
+                interaction_type:
+                  type: string
+                  enum: ['R0', 'R1', 'R2', 'R3', 'R4', 'P1', 'P2', 'P3', 'P4', 'P5']
+                price_at_interaction:
+                  type: number
+
+    # ==================== ORDER SCHEMA ====================
+    OrderEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - order_id
+                - symbol
+                - side
+                - quantity
+                - order_type
+                - status
+              properties:
+                order_id:
+                  type: string
+                  format: uuid
+                symbol:
+                  type: string
+                side:
+                  type: string
+                  enum: ['BUY', 'SELL']
+                quantity:
+                  type: integer
+                order_type:
+                  type: string
+                  enum: ['MARKET', 'LIMIT', 'STOP', 'STOP_LIMIT']
+                status:
+                  type: string
+                  enum: ['submitted', 'filled', 'cancelled', 'rejected']
+                price:
+                  type: number
+                filled_quantity:
+                  type: integer
+                average_fill_price:
+                  type: number
+
+    # ==================== POSITION SCHEMA ====================
+    PositionEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - position_id
+                - symbol
+                - side
+                - quantity
+                - entry_price
+                - current_price
+                - unrealized_pnl
+              properties:
+                position_id:
+                  type: string
+                  format: uuid
+                symbol:
+                  type: string
+                side:
+                  type: string
+                  enum: ['LONG', 'SHORT']
+                quantity:
+                  type: integer
+                entry_price:
+                  type: number
+                current_price:
+                  type: number
+                unrealized_pnl:
+                  type: number
+                realized_pnl:
+                  type: number
+
+    # ==================== PORTFOLIO SCHEMA ====================
+    PortfolioUpdate:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - balance
+                - equity
+                - unrealized_pnl
+                - realized_pnl_today
+                - daily_trades
+                - win_rate
+                - max_drawdown
+              properties:
+                balance:
+                  type: number
+                equity:
+                  type: number
+                unrealized_pnl:
+                  type: number
+                realized_pnl_today:
+                  type: number
+                daily_trades:
+                  type: integer
+                win_rate:
+                  type: number
+                max_drawdown:
+                  type: number
+
+    # ==================== RISK SCHEMAS ====================
+    CircuitBreakerEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - triggered_at
+                - reason
+                - threshold_exceeded
+                - actions_taken
+              properties:
+                triggered_at:
+                  type: string
+                  format: date-time
+                reason:
+                  type: string
+                threshold_exceeded:
+                  type: string
+                actions_taken:
+                  type: array
+                  items:
+                    type: string
+
+    KillSwitchEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - activated_at
+                - reason
+                - bots_killed
+                - positions_closed
+                - orders_cancelled
+                - priority
+              properties:
+                activated_at:
+                  type: string
+                  format: date-time
+                reason:
+                  type: string
+                bots_killed:
+                  type: integer
+                positions_closed:
+                  type: integer
+                orders_cancelled:
+                  type: integer
+                priority:
+                  type: string
+                  enum: ['HIGHEST']
+
+    # ==================== BOT SCHEMAS ====================
+    BotStatusChange:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - old_status
+                - new_status
+                - reason
+              properties:
+                old_status:
+                  type: string
+                  enum: ['stopped', 'running', 'killed', 'error']
+                new_status:
+                  type: string
+                  enum: ['stopped', 'running', 'killed', 'error']
+                reason:
+                  type: string
+
+    BotHeartbeat:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - status
+                - uptime_seconds
+                - memory_usage_mb
+                - cpu_usage_pct
+              properties:
+                status:
+                  type: string
+                  enum: ['healthy', 'degraded', 'unhealthy']
+                uptime_seconds:
+                  type: integer
+                memory_usage_mb:
+                  type: number
+                cpu_usage_pct:
+                  type: number
+
+    # ==================== CONTROL SCHEMAS ====================
+    SubscribeRequest:
+      type: object
+      required:
+        - action
+        - channels
+      properties:
+        action:
+          type: string
+          enum: ['subscribe']
+        channels:
+          type: array
+          items:
+            type: string
+            enum: ['price', 'orderflow', 'patterns', 'orders', 'positions', 'portfolio', 'risk', 'bot']
+
+    UnsubscribeRequest:
+      type: object
+      required:
+        - action
+        - channels
+      properties:
+        action:
+          type: string
+          enum: ['unsubscribe']
+        channels:
+          type: array
+          items:
+            type: string
+
+    SubscribedResponse:
+      type: object
+      required:
+        - action
+        - channels
+      properties:
+        action:
+          type: string
+          enum: ['subscribed']
+        channels:
+          type: array
+          items:
+            type: string
+
+    UnsubscribedResponse:
+      type: object
+      required:
+        - action
+        - channels
+      properties:
+        action:
+          type: string
+          enum: ['unsubscribed']
+        channels:
+          type: array
+          items:
+            type: string
+
+    ErrorMessage:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+
+# ==================== PAGE SUBSCRIPTIONS ====================
+x-page-subscriptions:
+  live_dashboard:
+    channels:
+      - price
+      - orderflow
+      - patterns
+      - orders
+      - positions
+      - portfolio
+      - risk
+      - bot
+    description: Main live trading dashboard
+  bot_management:
+    channels:
+      - bot
+      - risk
+    description: Bot management interface
+  risk_monitor:
+    channels:
+      - risk
+      - portfolio
+      - bot
+    description: Risk monitoring dashboard
+  order_management:
+    channels:
+      - orders
+      - positions
+    description: Order and position management
