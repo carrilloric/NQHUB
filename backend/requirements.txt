@@ -46,6 +46,9 @@ pytz==2024.1
 zstandard==0.22.0  # Decompress .zst files from Databento
 psutil==5.9.5
 
+# ICT Analysis
+smartmoneyconcepts>=0.0.26  # ICT patterns detection (FVG, Order Blocks, etc.)
+
 # AI Assistant
 anthropic==0.39.0  # Claude API
 google-generativeai==0.8.3  # Gemini
