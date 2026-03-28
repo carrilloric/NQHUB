@@ -297,6 +297,15 @@ export const websocketHandlers = [
           channels: data.channels,
         }));
       }
+
+      // Handle ping messages (heartbeat)
+      if (data.action === 'ping') {
+        console.log('[MSW] Received ping, sending pong');
+        client.send(JSON.stringify({
+          action: 'pong',
+          timestamp: new Date().toISOString(),
+        }));
+      }
     });
 
     // Heartbeat interval (every 30 seconds)
