@@ -1,0 +1,942 @@
+openapi: 3.1.0
+info:
+  title: NQ-HUB Data Platform API
+  version: 1.0.0
+  description: Contract-first OpenAPI specification for NQ-HUB Data Platform endpoints
+  contact:
+    name: AUTOMATION LABS TEAM
+    email: support@automation-labs.ai
+  license:
+    name: Proprietary
+    url: https://automation-labs.ai/license
+
+servers:
+  - url: http://localhost:8002
+    description: Development server
+  - url: https://api.nqhub.automation-labs.ai
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/data/candles/{tf}:
+    get:
+      summary: Get candles by timeframe
+      operationId: getCandlesByTimeframe
+      tags:
+        - Candles
+      parameters:
+        - $ref: '#/components/parameters/TimeframeParam'
+        - $ref: '#/components/parameters/SymbolParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+        - $ref: '#/components/parameters/IncludeOflowParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Successful response with candles data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandlesResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/CandlesResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/candles/{tf}/{timestamp}:
+    get:
+      summary: Get a specific candle
+      operationId: getCandleByTimestamp
+      tags:
+        - Candles
+      parameters:
+        - $ref: '#/components/parameters/TimeframeParam'
+        - $ref: '#/components/parameters/TimestampParam'
+        - $ref: '#/components/parameters/IncludeOflowParam'
+      responses:
+        '200':
+          description: Single candle data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleCandleResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/SingleCandleExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/ticks:
+    get:
+      summary: Get tick data
+      operationId: getTicks
+      tags:
+        - Ticks
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Tick data response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicksResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/TicksResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/coverage:
+    get:
+      summary: Get data coverage information
+      operationId: getCoverage
+      tags:
+        - Metadata
+      responses:
+        '200':
+          description: Coverage information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/CoverageResponseExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/contracts/active:
+    get:
+      summary: Get active contracts
+      operationId: getActiveContracts
+      tags:
+        - Metadata
+      responses:
+        '200':
+          description: Active contracts list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveContractsResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/ActiveContractsExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/rollover-periods:
+    get:
+      summary: Get rollover periods
+      operationId: getRolloverPeriods
+      tags:
+        - Metadata
+      responses:
+        '200':
+          description: Rollover periods list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolloverPeriodsResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/RolloverPeriodsExample'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/export:
+    post:
+      summary: Create export job
+      operationId: createExportJob
+      tags:
+        - Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+            examples:
+              default:
+                $ref: '#/components/examples/ExportRequestExample'
+      responses:
+        '201':
+          description: Export job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJobCreated'
+              examples:
+                default:
+                  $ref: '#/components/examples/ExportJobCreatedExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/data/export/{job_id}:
+    get:
+      summary: Get export job status
+      operationId: getExportJobStatus
+      tags:
+        - Export
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Export job ID
+      responses:
+        '200':
+          description: Export job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJobStatus'
+              examples:
+                queued:
+                  $ref: '#/components/examples/ExportJobQueuedExample'
+                processing:
+                  $ref: '#/components/examples/ExportJobProcessingExample'
+                complete:
+                  $ref: '#/components/examples/ExportJobCompleteExample'
+                failed:
+                  $ref: '#/components/examples/ExportJobFailedExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  parameters:
+    TimeframeParam:
+      name: tf
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: ['1min', '5min', '15min', '30min', '1hour', '4hour', '1day']
+      description: Timeframe
+
+    TimestampParam:
+      name: timestamp
+      in: path
+      required: true
+      schema:
+        type: string
+        format: date-time
+      description: ISO 8601 timestamp
+
+    SymbolParam:
+      name: symbol
+      in: query
+      required: false
+      schema:
+        type: string
+        default: 'NQH25'
+      description: Contract symbol
+
+    StartDateParam:
+      name: start
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      description: Start date (ISO 8601)
+
+    EndDateParam:
+      name: end
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+      description: End date (ISO 8601)
+
+    IncludeOflowParam:
+      name: include_oflow
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: Include order flow details
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000
+        default: 100
+      description: Number of results to return
+
+    OffsetParam:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Offset for pagination
+
+  schemas:
+    Candle:
+      type: object
+      required:
+        - timestamp
+        - open
+        - high
+        - low
+        - close
+        - volume
+      properties:
+        # Core OHLCV (6 columns)
+        timestamp:
+          type: string
+          format: date-time
+          description: UTC timestamp
+        open:
+          type: number
+          format: float
+          description: Opening price
+        high:
+          type: number
+          format: float
+          description: High price
+        low:
+          type: number
+          format: float
+          description: Low price
+        close:
+          type: number
+          format: float
+          description: Closing price
+        volume:
+          type: integer
+          description: Total volume
+
+        # Orderflow Metrics (10 columns)
+        delta:
+          type: integer
+          description: Difference between buy and sell volume (buy_volume - sell_volume)
+        buy_volume:
+          type: integer
+          description: Total buy volume
+        sell_volume:
+          type: integer
+          description: Total sell volume
+        cumulative_delta:
+          type: integer
+          description: Running total of delta
+        buy_trades:
+          type: integer
+          description: Number of buy trades
+        sell_trades:
+          type: integer
+          description: Number of sell trades
+        delta_percentage:
+          type: number
+          format: float
+          description: Delta as percentage of total volume (delta / volume * 100)
+        max_delta:
+          type: integer
+          description: Maximum delta reached during candle
+        min_delta:
+          type: integer
+          description: Minimum delta reached during candle
+        delta_change:
+          type: integer
+          description: Change in delta from previous candle
+
+        # Price Levels & Statistics (10 columns)
+        vwap:
+          type: number
+          format: float
+          description: Volume Weighted Average Price
+        typical_price:
+          type: number
+          format: float
+          description: (high + low + close) / 3
+        range:
+          type: number
+          format: float
+          description: high - low
+        body_size:
+          type: number
+          format: float
+          description: abs(open - close)
+        wick_upper:
+          type: number
+          format: float
+          description: high - max(open, close)
+        wick_lower:
+          type: number
+          format: float
+          description: min(open, close) - low
+        body_percentage:
+          type: number
+          format: float
+          description: body_size / range * 100
+        price_change:
+          type: number
+          format: float
+          description: close - open
+        price_change_percentage:
+          type: number
+          format: float
+          description: (close - open) / open * 100
+        cumulative_volume:
+          type: integer
+          description: Running total of volume
+
+        # Market Microstructure (9 columns)
+        tick_count:
+          type: integer
+          description: Number of ticks
+        bid_volume:
+          type: integer
+          description: Volume at bid
+        ask_volume:
+          type: integer
+          description: Volume at ask
+        imbalance:
+          type: number
+          format: float
+          description: (buy_volume - sell_volume) / (buy_volume + sell_volume)
+        spread_avg:
+          type: number
+          format: float
+          description: Average bid-ask spread
+        trade_intensity:
+          type: number
+          format: float
+          description: tick_count / volume
+        volume_rate:
+          type: number
+          format: float
+          description: volume / tick_count
+        large_trade_count:
+          type: integer
+          description: Trades > 100 contracts
+        large_trade_volume:
+          type: integer
+          description: Volume from large trades
+
+    SingleCandleResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Candle'
+        - type: object
+          properties:
+            oflow_detail:
+              type: object
+              description: Detailed order flow data when include_oflow=true
+              properties:
+                price_levels:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      price:
+                        type: number
+                        format: float
+                      bid_volume:
+                        type: integer
+                      ask_volume:
+                        type: integer
+                      trades:
+                        type: integer
+
+    CandlesResponse:
+      type: object
+      required:
+        - data
+        - total
+        - has_more
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candle'
+        total:
+          type: integer
+          description: Total number of candles
+        has_more:
+          type: boolean
+          description: Whether more data is available
+
+    Tick:
+      type: object
+      required:
+        - timestamp
+        - price
+        - size
+        - side
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        price:
+          type: number
+          format: float
+        size:
+          type: integer
+        side:
+          type: string
+          enum: ['buy', 'sell']
+        bid:
+          type: number
+          format: float
+        ask:
+          type: number
+          format: float
+
+    TicksResponse:
+      type: object
+      required:
+        - data
+        - total
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tick'
+        total:
+          type: integer
+
+    TimeframeCoverage:
+      type: object
+      required:
+        - tf
+        - count
+        - start
+        - end
+        - last_updated
+      properties:
+        tf:
+          type: string
+          enum: ['1min', '5min', '15min', '30min', '1hour', '4hour', '1day']
+        count:
+          type: integer
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        last_updated:
+          type: string
+          format: date-time
+
+    CoverageResponse:
+      type: object
+      required:
+        - timeframes
+      properties:
+        timeframes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeframeCoverage'
+
+    Contract:
+      type: object
+      required:
+        - symbol
+        - expiry
+        - is_front_month
+      properties:
+        symbol:
+          type: string
+        expiry:
+          type: string
+          format: date
+        is_front_month:
+          type: boolean
+
+    ActiveContractsResponse:
+      type: object
+      required:
+        - contracts
+      properties:
+        contracts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+
+    RolloverPeriod:
+      type: object
+      required:
+        - from_symbol
+        - to_symbol
+        - rollover_date
+      properties:
+        from_symbol:
+          type: string
+        to_symbol:
+          type: string
+        rollover_date:
+          type: string
+          format: date
+
+    RolloverPeriodsResponse:
+      type: object
+      required:
+        - rollovers
+      properties:
+        rollovers:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolloverPeriod'
+
+    ExportRequest:
+      type: object
+      required:
+        - table
+        - start
+        - end
+        - format
+      properties:
+        table:
+          type: string
+          enum: ['candles_1min', 'candles_5min', 'candles_15min', 'candles_30min', 'candles_1hour', 'candles_4hour', 'candles_1day', 'ticks']
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        include_oflow:
+          type: boolean
+          default: false
+        format:
+          type: string
+          enum: ['parquet', 'csv']
+          default: 'parquet'
+
+    ExportJobCreated:
+      type: object
+      required:
+        - job_id
+        - status
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: ['queued']
+
+    ExportJobStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: ['queued', 'processing', 'complete', 'failed']
+        download_url:
+          type: string
+          format: uri
+          description: Available when status is 'complete'
+        size_mb:
+          type: number
+          format: float
+          description: File size in megabytes
+        error_message:
+          type: string
+          description: Available when status is 'failed'
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Progress percentage when processing
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+        - code
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Invalid timeframe. Must be one of: 1min, 5min, 15min, 30min, 1hour, 4hour, 1day"
+            code: "INVALID_TIMEFRAME"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Invalid or expired token"
+            code: "UNAUTHORIZED"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Resource not found"
+            code: "NOT_FOUND"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "An unexpected error occurred"
+            code: "INTERNAL_ERROR"
+
+  examples:
+    CandlesResponseExample:
+      value:
+        data:
+          - timestamp: "2024-11-29T14:30:00Z"
+            open: 21534.25
+            high: 21542.50
+            low: 21532.00
+            close: 21540.75
+            volume: 3827
+            delta: 245
+            buy_volume: 2036
+            sell_volume: 1791
+            cumulative_delta: 1523
+            buy_trades: 187
+            sell_trades: 142
+            delta_percentage: 6.41
+            max_delta: 312
+            min_delta: -67
+            delta_change: 89
+            vwap: 21537.82
+            typical_price: 21538.42
+            range: 10.50
+            body_size: 6.50
+            wick_upper: 1.75
+            wick_lower: 2.25
+            body_percentage: 61.90
+            price_change: 6.50
+            price_change_percentage: 0.03
+            cumulative_volume: 458231
+            tick_count: 892
+            bid_volume: 1823
+            ask_volume: 2004
+            imbalance: 0.064
+            spread_avg: 0.25
+            trade_intensity: 0.233
+            volume_rate: 4.29
+            large_trade_count: 12
+            large_trade_volume: 1823
+        total: 5000
+        has_more: true
+
+    SingleCandleExample:
+      value:
+        timestamp: "2024-11-29T14:30:00Z"
+        open: 21534.25
+        high: 21542.50
+        low: 21532.00
+        close: 21540.75
+        volume: 3827
+        delta: 245
+        buy_volume: 2036
+        sell_volume: 1791
+        cumulative_delta: 1523
+        buy_trades: 187
+        sell_trades: 142
+        delta_percentage: 6.41
+        max_delta: 312
+        min_delta: -67
+        delta_change: 89
+        vwap: 21537.82
+        typical_price: 21538.42
+        range: 10.50
+        body_size: 6.50
+        wick_upper: 1.75
+        wick_lower: 2.25
+        body_percentage: 61.90
+        price_change: 6.50
+        price_change_percentage: 0.03
+        cumulative_volume: 458231
+        tick_count: 892
+        bid_volume: 1823
+        ask_volume: 2004
+        imbalance: 0.064
+        spread_avg: 0.25
+        trade_intensity: 0.233
+        volume_rate: 4.29
+        large_trade_count: 12
+        large_trade_volume: 1823
+        oflow_detail:
+          price_levels:
+            - price: 21540.75
+              bid_volume: 523
+              ask_volume: 312
+              trades: 45
+            - price: 21540.50
+              bid_volume: 234
+              ask_volume: 189
+              trades: 23
+
+    TicksResponseExample:
+      value:
+        data:
+          - timestamp: "2024-11-29T14:30:00.123Z"
+            price: 21534.25
+            size: 5
+            side: "buy"
+            bid: 21534.00
+            ask: 21534.25
+          - timestamp: "2024-11-29T14:30:00.245Z"
+            price: 21534.50
+            size: 2
+            side: "sell"
+            bid: 21534.25
+            ask: 21534.50
+        total: 150000
+
+    CoverageResponseExample:
+      value:
+        timeframes:
+          - tf: "1min"
+            count: 525600
+            start: "2024-01-01T00:00:00Z"
+            end: "2024-11-29T23:59:00Z"
+            last_updated: "2024-11-29T23:59:00Z"
+          - tf: "5min"
+            count: 105120
+            start: "2024-01-01T00:00:00Z"
+            end: "2024-11-29T23:55:00Z"
+            last_updated: "2024-11-29T23:55:00Z"
+          - tf: "15min"
+            count: 35040
+            start: "2024-01-01T00:00:00Z"
+            end: "2024-11-29T23:45:00Z"
+            last_updated: "2024-11-29T23:45:00Z"
+
+    ActiveContractsExample:
+      value:
+        contracts:
+          - symbol: "NQH25"
+            expiry: "2025-03-21"
+            is_front_month: true
+          - symbol: "NQM25"
+            expiry: "2025-06-20"
+            is_front_month: false
+          - symbol: "NQU25"
+            expiry: "2025-09-19"
+            is_front_month: false
+
+    RolloverPeriodsExample:
+      value:
+        rollovers:
+          - from_symbol: "NQZ24"
+            to_symbol: "NQH25"
+            rollover_date: "2024-12-13"
+          - from_symbol: "NQH25"
+            to_symbol: "NQM25"
+            rollover_date: "2025-03-14"
+
+    ExportRequestExample:
+      value:
+        table: "candles_1min"
+        start: "2024-11-01T00:00:00Z"
+        end: "2024-11-30T23:59:59Z"
+        include_oflow: true
+        format: "parquet"
+
+    ExportJobCreatedExample:
+      value:
+        job_id: "550e8400-e29b-41d4-a716-446655440000"
+        status: "queued"
+
+    ExportJobQueuedExample:
+      value:
+        status: "queued"
+        progress: 0
+
+    ExportJobProcessingExample:
+      value:
+        status: "processing"
+        progress: 45
+
+    ExportJobCompleteExample:
+      value:
+        status: "complete"
+        download_url: "https://storage.nqhub.ai/exports/550e8400-e29b-41d4-a716-446655440000.parquet"
+        size_mb: 125.5
+        progress: 100
+
+    ExportJobFailedExample:
+      value:
+        status: "failed"
+        error_message: "Insufficient memory to process export"
+
+tags:
+  - name: Candles
+    description: Candlestick data operations
+  - name: Ticks
+    description: Tick data operations
+  - name: Metadata
+    description: Data coverage and contract information
+  - name: Export
+    description: Data export operations
