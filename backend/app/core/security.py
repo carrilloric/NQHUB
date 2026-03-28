@@ -100,3 +100,37 @@ def get_password_hash(password: str) -> str:
         Hashed password
     """
     return pwd_context.hash(password)
+
+
+def hash_password(password: str) -> str:
+    """
+    Hash a password (ADR-018 compliant name)
+
+    Args:
+        password: Plain text password
+
+    Returns:
+        Hashed password
+    """
+    return get_password_hash(password)
+
+
+def decode_token(token: str) -> dict | None:
+    """
+    Decode JWT token and return payload
+
+    Args:
+        token: JWT token to decode
+
+    Returns:
+        Token payload if valid, None otherwise
+    """
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        return payload
+    except JWTError:
+        return None
