@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
     features, backtesting, ml, approval, bots, orders, risk, trades,
-    settings, strategies, assistant, data_platform
+    settings, strategies, assistant, data_platform, live_trading
 )
 from app.etl import routes as etl_routes
 
@@ -17,8 +17,13 @@ api_router.include_router(approval.router, prefix="/approval", tags=["approval"]
 # Data Platform API (CONTRACT-001)
 api_router.include_router(data_platform.router, prefix="/data", tags=["data-platform"])
 
+<<<<<<< HEAD
 # Pattern Detection API (CONTRACT-002)
 api_router.include_router(pattern_detection.router, prefix="/patterns", tags=["pattern-detection"])
+
+# Live Trading API (CONTRACT-004)
+api_router.include_router(live_trading.router, prefix="/bots", tags=["live-trading"])
+
 
 # Data & Analysis
 api_router.include_router(candles.router, prefix="/candles", tags=["candles"])
@@ -29,12 +34,14 @@ api_router.include_router(market_state.router, prefix="/market-state", tags=["ma
 # Trading & Strategy
 api_router.include_router(strategies.router, prefix="/strategies", tags=["strategies"])
 api_router.include_router(backtesting.router, prefix="/backtesting", tags=["backtesting"])
-api_router.include_router(bots.router, prefix="/bots", tags=["bots"])
-api_router.include_router(orders.router, prefix="/orders", tags=["orders"])
+# Commented out - replaced by live_trading router per CONTRACT-004
+# api_router.include_router(bots.router, prefix="/bots", tags=["bots"])
+# api_router.include_router(orders.router, prefix="/orders", tags=["orders"])
 api_router.include_router(trades.router, prefix="/trades", tags=["trades"])
 
 # Risk & Settings
-api_router.include_router(risk.router, prefix="/risk", tags=["risk"])
+# Commented out - replaced by live_trading router per CONTRACT-004
+# api_router.include_router(risk.router, prefix="/risk", tags=["risk"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 
 # AI & Machine Learning
