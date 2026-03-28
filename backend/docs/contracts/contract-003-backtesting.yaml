@@ -1,0 +1,1081 @@
+openapi: 3.1.0
+info:
+  title: NQHUB Strategy & Backtesting API
+  version: 1.0.0
+  description: Contract-first OpenAPI specification for Strategy Registry and Backtesting endpoints
+  contact:
+    name: AUTOMATION LABS TEAM
+    email: support@automation-labs.ai
+  license:
+    name: Proprietary
+    url: https://automation-labs.ai/license
+
+servers:
+  - url: http://localhost:8002
+    description: Development server
+  - url: https://api.nqhub.automation-labs.ai
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Strategies
+    description: Strategy management and validation
+  - name: Backtesting
+    description: Backtest execution and results
+  - name: Approval
+    description: Strategy approval workflow
+
+paths:
+  /api/v1/backtest/strategies:
+    get:
+      tags:
+        - Strategies
+      summary: List available strategies
+      description: Retrieve list of strategies with optional filtering
+      operationId: listStrategies
+      parameters:
+        - name: type
+          in: query
+          description: Filter by strategy type
+          required: false
+          schema:
+            type: string
+            enum: [momentum, mean_reversion, trend_following, breakout, scalping]
+        - name: status
+          in: query
+          description: Filter by strategy status
+          required: false
+          schema:
+            type: string
+            enum: [draft, validated, approved, deprecated]
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - strategies
+                properties:
+                  strategies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StrategyListItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/strategies/validate:
+    post:
+      tags:
+        - Strategies
+      summary: Validate strategy code
+      description: Validate strategy Python code and detect requirements
+      operationId: validateStrategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: Strategy Python code to validate
+                  minLength: 1
+            example:
+              code: |
+                def strategy_logic(df):
+                    # Strategy implementation
+                    return signals
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/strategies/save:
+    post:
+      tags:
+        - Strategies
+      summary: Save a new strategy
+      description: Save strategy code to the registry
+      operationId: saveStrategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - name
+                - version
+              properties:
+                code:
+                  type: string
+                  description: Strategy Python code
+                  minLength: 1
+                name:
+                  type: string
+                  description: Strategy name
+                  minLength: 1
+                  maxLength: 100
+                version:
+                  type: string
+                  description: Strategy version (semver)
+                  pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+                  example: "1.0.0"
+                description:
+                  type: string
+                  description: Strategy description
+                  maxLength: 500
+      responses:
+        '201':
+          description: Strategy saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Strategy unique identifier
+                  status:
+                    type: string
+                    enum: [draft]
+                    description: Initial status is always draft
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/strategies/{id}/source:
+    get:
+      tags:
+        - Strategies
+      summary: Get strategy source code
+      description: Retrieve strategy source code and metadata
+      operationId: getStrategySource
+      parameters:
+        - name: id
+          in: path
+          description: Strategy ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Strategy source code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategySource'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/backtest/run:
+    post:
+      tags:
+        - Backtesting
+      summary: Execute backtest
+      description: Start a new backtest run for a strategy
+      operationId: runBacktest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - strategy_id
+                - config
+              properties:
+                strategy_id:
+                  type: string
+                  format: uuid
+                  description: Strategy to backtest
+                params:
+                  type: object
+                  description: Strategy-specific parameters
+                  additionalProperties: true
+                config:
+                  $ref: '#/components/schemas/BacktestConfig'
+            example:
+              strategy_id: "123e4567-e89b-12d3-a456-426614174000"
+              params:
+                fast_ma: 20
+                slow_ma: 50
+              config:
+                start: "2025-01-01"
+                end: "2025-12-31"
+                timeframe: "1min"
+                commission: 0.0002
+                slippage: 1
+                tp_ticks: 20
+                sl_ticks: 10
+      responses:
+        '202':
+          description: Backtest queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - run_id
+                  - status
+                  - task_id
+                properties:
+                  run_id:
+                    type: string
+                    format: uuid
+                    description: Backtest run identifier
+                  status:
+                    type: string
+                    enum: [queued]
+                  task_id:
+                    type: string
+                    description: Celery task ID for tracking
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/backtest/results/import:
+    post:
+      tags:
+        - Backtesting
+      summary: Import backtest results
+      description: Import backtest results from external source (e.g., Jupyter notebook)
+      operationId: importBacktestResults
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - strategy_id
+                - results
+                - source
+              properties:
+                strategy_id:
+                  type: string
+                  format: uuid
+                  description: Strategy ID
+                params_used:
+                  type: object
+                  description: Parameters used in backtest
+                  additionalProperties: true
+                results:
+                  $ref: '#/components/schemas/BacktestResults'
+                source:
+                  type: string
+                  enum: [notebook, external, manual]
+                  description: Source of the results
+            example:
+              strategy_id: "123e4567-e89b-12d3-a456-426614174000"
+              params_used:
+                fast_ma: 20
+                slow_ma: 50
+              results:
+                sharpe: 2.5
+                sortino: 3.1
+                max_dd: 0.15
+                win_rate: 0.65
+                profit_factor: 2.1
+                total_trades: 450
+                net_profit: 125000
+              source: notebook
+      responses:
+        '201':
+          description: Results imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - run_id
+                  - status
+                properties:
+                  run_id:
+                    type: string
+                    format: uuid
+                    description: Backtest run identifier
+                  status:
+                    type: string
+                    enum: [imported]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/backtest/runs:
+    get:
+      tags:
+        - Backtesting
+      summary: List backtest runs
+      description: Retrieve list of backtest runs with filtering
+      operationId: listBacktestRuns
+      parameters:
+        - name: strategy_id
+          in: query
+          description: Filter by strategy ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by run status
+          required: false
+          schema:
+            type: string
+            enum: [queued, running, completed, failed, imported]
+        - name: source
+          in: query
+          description: Filter by result source
+          required: false
+          schema:
+            type: string
+            enum: [nqhub, notebook, external, manual]
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of backtest runs
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - runs
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BacktestRunSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/backtest/runs/{id}:
+    get:
+      tags:
+        - Backtesting
+      summary: Get backtest run details
+      description: Retrieve detailed backtest results including equity curve
+      operationId: getBacktestRun
+      parameters:
+        - name: id
+          in: path
+          description: Backtest run ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detailed backtest run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestRunDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/backtest/screener:
+    get:
+      tags:
+        - Backtesting
+      summary: Screen backtest results
+      description: Search and filter backtest runs by performance metrics
+      operationId: screenerBacktests
+      parameters:
+        - name: strategy_name
+          in: query
+          description: Filter by strategy name (partial match)
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by strategy type
+          required: false
+          schema:
+            type: string
+            enum: [momentum, mean_reversion, trend_following, breakout, scalping]
+        - name: timeframe
+          in: query
+          description: Filter by timeframe
+          required: false
+          schema:
+            type: string
+            enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+        - name: min_sharpe
+          in: query
+          description: Minimum Sharpe ratio
+          required: false
+          schema:
+            type: number
+            format: float
+        - name: min_profit_factor
+          in: query
+          description: Minimum profit factor
+          required: false
+          schema:
+            type: number
+            format: float
+        - name: source
+          in: query
+          description: Filter by result source
+          required: false
+          schema:
+            type: string
+            enum: [nqhub, notebook, external, manual]
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: order_by
+          in: query
+          description: Sort results by metric
+          required: false
+          schema:
+            type: string
+            enum: [sharpe, sortino, max_dd, win_rate, profit_factor, total_trades, net_profit, created_at]
+            default: sharpe
+      responses:
+        '200':
+          description: Screener results
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - runs
+                  - total
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BacktestScreenerItem'
+                  total:
+                    type: integer
+                    description: Total matching results
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/backtest/optimize:
+    post:
+      tags:
+        - Backtesting
+      summary: Optimize strategy parameters
+      description: Start parameter optimization job
+      operationId: optimizeStrategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - strategy_id
+                - param_grid
+                - method
+                - config
+              properties:
+                strategy_id:
+                  type: string
+                  format: uuid
+                  description: Strategy to optimize
+                param_grid:
+                  type: object
+                  description: Parameter ranges for optimization
+                  additionalProperties:
+                    oneOf:
+                      - type: array
+                        items:
+                          type: number
+                      - type: array
+                        items:
+                          type: integer
+                      - type: array
+                        items:
+                          type: string
+                method:
+                  type: string
+                  enum: [grid, walk_forward]
+                  description: Optimization method
+                config:
+                  $ref: '#/components/schemas/BacktestConfig'
+            example:
+              strategy_id: "123e4567-e89b-12d3-a456-426614174000"
+              param_grid:
+                fast_ma: [10, 20, 30]
+                slow_ma: [40, 50, 60]
+                stop_loss: [10, 15, 20]
+              method: grid
+              config:
+                start: "2025-01-01"
+                end: "2025-12-31"
+                timeframe: "5min"
+                commission: 0.0002
+                slippage: 1
+      responses:
+        '202':
+          description: Optimization job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - job_id
+                  - status
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
+                    description: Optimization job identifier
+                  status:
+                    type: string
+                    enum: [queued]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/approval/checklist/{strategy_id}:
+    get:
+      tags:
+        - Approval
+      summary: Get approval checklist
+      description: Retrieve approval criteria checklist for a strategy
+      operationId: getApprovalChecklist
+      parameters:
+        - name: strategy_id
+          in: path
+          description: Strategy ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Approval checklist
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - checks
+                  - overall_passed
+                properties:
+                  checks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApprovalCheck'
+                  overall_passed:
+                    type: boolean
+                    description: Whether all checks pass
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/approval/approve:
+    post:
+      tags:
+        - Approval
+      summary: Approve strategy
+      description: Approve a strategy for production use
+      operationId: approveStrategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - strategy_id
+                - backtest_run_id
+              properties:
+                strategy_id:
+                  type: string
+                  format: uuid
+                  description: Strategy to approve
+                backtest_run_id:
+                  type: string
+                  format: uuid
+                  description: Reference backtest run
+                notes:
+                  type: string
+                  description: Approval notes
+                  maxLength: 1000
+      responses:
+        '201':
+          description: Strategy approved
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - approval_id
+                  - approved_at
+                properties:
+                  approval_id:
+                    type: string
+                    format: uuid
+                    description: Approval record ID
+                  approved_at:
+                    type: string
+                    format: date-time
+                    description: Approval timestamp
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    StrategyListItem:
+      type: object
+      required:
+        - id
+        - name
+        - version
+        - type
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: string
+        type:
+          type: string
+          enum: [momentum, mean_reversion, trend_following, breakout, scalping]
+        status:
+          type: string
+          enum: [draft, validated, approved, deprecated]
+        created_at:
+          type: string
+          format: date-time
+
+    ValidationResult:
+      type: object
+      required:
+        - valid
+        - errors
+        - warnings
+      properties:
+        valid:
+          type: boolean
+          description: Whether the code is valid
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation errors
+        warnings:
+          type: array
+          items:
+            type: string
+          description: List of warnings
+        detected_name:
+          type: string
+          description: Auto-detected strategy name
+        detected_type:
+          type: string
+          description: Auto-detected strategy type
+        required_features:
+          type: array
+          items:
+            type: string
+          description: Required data features
+
+    StrategySource:
+      type: object
+      required:
+        - code
+        - name
+        - version
+        - created_at
+      properties:
+        code:
+          type: string
+          description: Strategy Python code
+        name:
+          type: string
+        version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    BacktestConfig:
+      type: object
+      required:
+        - start
+        - end
+        - timeframe
+      properties:
+        start:
+          type: string
+          format: date
+          description: Start date (YYYY-MM-DD)
+        end:
+          type: string
+          format: date
+          description: End date (YYYY-MM-DD)
+        timeframe:
+          type: string
+          enum: [1min, 5min, 15min, 30min, 1hour, 4hour, 1day]
+        commission:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 0.01
+          default: 0.0002
+          description: Commission per trade (as fraction)
+        slippage:
+          type: integer
+          minimum: 0
+          maximum: 10
+          default: 1
+          description: Slippage in ticks
+        tp_ticks:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Take profit in ticks
+        sl_ticks:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Stop loss in ticks
+
+    BacktestResults:
+      type: object
+      required:
+        - sharpe
+        - sortino
+        - max_dd
+        - win_rate
+      properties:
+        sharpe:
+          type: number
+          format: float
+          description: Sharpe ratio
+        sortino:
+          type: number
+          format: float
+          description: Sortino ratio
+        max_dd:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Maximum drawdown (as fraction)
+        win_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Win rate (as fraction)
+        profit_factor:
+          type: number
+          format: float
+          minimum: 0
+          description: Profit factor
+        total_trades:
+          type: integer
+          minimum: 0
+          description: Total number of trades
+        net_profit:
+          type: number
+          format: float
+          description: Net profit in dollars
+        avg_win:
+          type: number
+          format: float
+          description: Average winning trade
+        avg_loss:
+          type: number
+          format: float
+          description: Average losing trade
+        max_consecutive_wins:
+          type: integer
+          minimum: 0
+        max_consecutive_losses:
+          type: integer
+          minimum: 0
+
+    BacktestRunSummary:
+      type: object
+      required:
+        - id
+        - strategy_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        strategy_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, completed, failed, imported]
+        results:
+          $ref: '#/components/schemas/BacktestResults'
+        created_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [nqhub, notebook, external, manual]
+
+    BacktestRunDetail:
+      type: object
+      required:
+        - id
+        - strategy_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        strategy_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, completed, failed, imported]
+        config:
+          $ref: '#/components/schemas/BacktestConfig'
+        params_used:
+          type: object
+          additionalProperties: true
+        results:
+          $ref: '#/components/schemas/BacktestResults'
+        equity_curve:
+          type: array
+          description: Equity curve data points
+          items:
+            type: object
+            required:
+              - date
+              - equity
+            properties:
+              date:
+                type: string
+                format: date-time
+              equity:
+                type: number
+                format: float
+                description: Account equity at this point
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [nqhub, notebook, external, manual]
+
+    BacktestScreenerItem:
+      type: object
+      required:
+        - id
+        - strategy_name
+        - strategy_type
+        - timeframe
+        - results
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        strategy_name:
+          type: string
+        strategy_type:
+          type: string
+          enum: [momentum, mean_reversion, trend_following, breakout, scalping]
+        timeframe:
+          type: string
+        results:
+          $ref: '#/components/schemas/BacktestResults'
+        created_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [nqhub, notebook, external, manual]
+
+    ApprovalCheck:
+      type: object
+      required:
+        - name
+        - passed
+      properties:
+        name:
+          type: string
+          description: Check name
+        passed:
+          type: boolean
+          description: Whether check passed
+        value:
+          type: number
+          format: float
+          description: Actual metric value
+        threshold:
+          type: number
+          format: float
+          description: Required threshold
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
