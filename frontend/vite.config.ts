@@ -32,4 +32,9 @@ export default defineConfig(({ mode }) => ({
       "@shared": path.resolve(__dirname, "./src/shared"),
     },
   },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test-setup.ts"],
+  },
 }));
