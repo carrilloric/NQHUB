@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0", // IPv4 - compatible with WSL2 port forwarding to Windows
     port: 3001,
     fs: {
-      allow: ["./src/client", "./src/shared"],
+      allow: ["./src/client", "./src/shared", "./src/mocks"],
       deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**"],
     },
     proxy: {
