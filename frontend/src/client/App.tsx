@@ -29,6 +29,8 @@ import BotManagement from "./pages/BotManagement";
 import Orders from "./pages/Orders";
 import RiskManagement from "./pages/RiskManagement";
 import Trades from "./pages/Trades";
+import TradeJournal from "./pages/TradeJournal";
+import OrderManagement from "./pages/OrderManagement";
 import Settings from "./pages/Settings";
 import Strategies from "./pages/Strategies";
 import Assistant from "./pages/Assistant";
@@ -191,7 +193,23 @@ const App = () => (
               }
             />
             <Route
+              path="/journal"
+              element={
+                <ProtectedRoute>
+                  <TradeJournal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrderManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders-legacy"
               element={
                 <ProtectedRoute>
                   <Orders />
