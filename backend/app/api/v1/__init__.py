@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
     features, backtesting, ml, approval, bots, orders, risk, trades,
-    settings, strategies, assistant, data_platform, live_trading
+    settings, strategies, assistant, assistant_tools, data_platform, live_trading
 )
 from app.etl import routes as etl_routes
 
@@ -41,6 +41,7 @@ api_router.include_router(settings.router, prefix="/settings", tags=["settings"]
 # AI & Machine Learning
 api_router.include_router(ml.router, prefix="/ml", tags=["machine-learning"])
 api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
+api_router.include_router(assistant_tools.router, prefix="/assistant/tools", tags=["assistant-tools"])
 
 # Approval workflow
 api_router.include_router(approval.router, prefix="/approval", tags=["approval"])

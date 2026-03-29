@@ -16,9 +16,13 @@ import os
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.main import app
-from app.db.session import Base, get_db
+from app.db.base_class import Base
+from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.core.security import create_access_token, hash_password
+
+# Import all models to register them with Base.metadata
+from app.models import user, password_reset, candlestick, patterns  # noqa: F401
 
 
 # Test database URL - use a separate test database
@@ -108,7 +112,7 @@ async def test_user(async_db: AsyncSession) -> User:
         is_verified=True
     )
     async_db.add(user)
-    await async_db.commit()
+    await async_db.flush()  # Flush instead of commit - will be rolled back
     await async_db.refresh(user)
     return user
 
@@ -125,7 +129,7 @@ async def admin_user(async_db: AsyncSession) -> User:
         is_verified=True
     )
     async_db.add(user)
-    await async_db.commit()
+    await async_db.flush()  # Flush instead of commit - will be rolled back
     await async_db.refresh(user)
     return user
 
