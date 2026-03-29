@@ -35,6 +35,7 @@ import Assistant from "./pages/Assistant";
 import { PatternDetection } from "./pages/PatternDetection";
 import LiveDashboard from "./pages/LiveDashboard";
 import RiskMonitor from "./pages/RiskMonitor";
+import AlphaLab from "./pages/AlphaLab";
 import { AppProvider, useAuth, Role } from "@/state/app";
 import { ServerTimeProvider } from "@/state/server-time";
 
@@ -155,6 +156,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <BacktestingAI />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alpha-lab"
+              element={
+                <ProtectedRoute>
+                  <AlphaLab />
                 </ProtectedRoute>
               }
             />
