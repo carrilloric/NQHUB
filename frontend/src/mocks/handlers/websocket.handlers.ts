@@ -291,25 +291,106 @@ export const websocketHandlers = [
               break;
 
             case 'risk':
-              // Send risk events very occasionally
-              const riskInterval = setInterval(() => {
-                if (subscribedChannels.has('risk') && Math.random() < 0.01) {
-                  // Very rare circuit breaker event
+              // Send risk events more frequently for testing
+
+              // Daily loss updates every 5 seconds
+              const dailyLossInterval = setInterval(() => {
+                if (subscribedChannels.has('risk')) {
+                  // Simulate daily loss at 65% (yellow warning zone)
                   client.send(JSON.stringify({
                     channel: 'risk',
-                    event: 'circuitBreakerTriggered',
+                    event: 'daily_loss_update',
                     data: {
-                      triggered_at: new Date().toISOString(),
-                      reason: 'Daily loss limit approaching (90%)',
-                      threshold_exceeded: 'daily_loss',
-                      actions_taken: ['stopped_new_orders'],
+                      bot_id: '550e8400-e29b-41d4-a716-446655440000',
+                      daily_loss_usd: 1625.50,
+                      limit_usd: 2500.00,
+                      pct: 65
                     },
                     timestamp: new Date().toISOString(),
                     bot_id: '550e8400-e29b-41d4-a716-446655440000',
                   }));
                 }
+              }, 5000);
+              intervals.set('risk-daily-loss', dailyLossInterval);
+
+              // Trailing drawdown updates every 7 seconds
+              const drawdownInterval = setInterval(() => {
+                if (subscribedChannels.has('risk')) {
+                  // Simulate trailing drawdown at 82% (red danger zone)
+                  client.send(JSON.stringify({
+                    channel: 'risk',
+                    event: 'trailing_drawdown_update',
+                    data: {
+                      bot_id: '660e8400-e29b-41d4-a716-446655440001',
+                      drawdown_usd: 2050.00,
+                      threshold_usd: 2500.00,
+                      pct: 82
+                    },
+                    timestamp: new Date().toISOString(),
+                    bot_id: '660e8400-e29b-41d4-a716-446655440001',
+                  }));
+                }
+              }, 7000);
+              intervals.set('risk-drawdown', drawdownInterval);
+
+              // Risk alerts every 10 seconds
+              const alertInterval = setInterval(() => {
+                if (subscribedChannels.has('risk')) {
+                  const alertLevels = ['INFO', 'WARNING', 'CRITICAL'];
+                  const alertMessages = [
+                    'Market volatility increasing',
+                    'Approaching daily loss limit',
+                    'Trailing drawdown nearing threshold',
+                    'Circuit breaker armed',
+                    'News event in 10 minutes'
+                  ];
+
+                  const level = Math.random() < 0.1 ? 'CRITICAL' :
+                               Math.random() < 0.3 ? 'WARNING' : 'INFO';
+
+                  client.send(JSON.stringify({
+                    channel: 'risk',
+                    event: 'risk_alert',
+                    data: {
+                      level,
+                      message: alertMessages[Math.floor(Math.random() * alertMessages.length)],
+                      bot_id: Math.random() > 0.5 ? '550e8400-e29b-41d4-a716-446655440000' : '660e8400-e29b-41d4-a716-446655440001'
+                    },
+                    timestamp: new Date().toISOString(),
+                  }));
+                }
+              }, 10000);
+              intervals.set('risk-alerts', alertInterval);
+
+              // Circuit breaker event (rare)
+              const circuitBreakerInterval = setInterval(() => {
+                if (subscribedChannels.has('risk') && Math.random() < 0.05) {
+                  client.send(JSON.stringify({
+                    channel: 'risk',
+                    event: 'circuit_breaker_triggered',
+                    data: {
+                      bot_id: '660e8400-e29b-41d4-a716-446655440001',
+                      reason: 'Daily loss exceeded 80% threshold',
+                      timestamp: new Date().toISOString()
+                    },
+                    timestamp: new Date().toISOString(),
+                    bot_id: '660e8400-e29b-41d4-a716-446655440001',
+                  }));
+                }
               }, 30000);
-              intervals.set('risk', riskInterval);
+              intervals.set('risk-circuit-breaker', circuitBreakerInterval);
+
+              // Send immediate risk status on subscription
+              client.send(JSON.stringify({
+                channel: 'risk',
+                event: 'risk_alert',
+                data: {
+                  level: 'WARNING',
+                  message: 'Risk monitoring activated - Trailing drawdown at 82%',
+                  bot_id: '660e8400-e29b-41d4-a716-446655440001'
+                },
+                timestamp: new Date().toISOString(),
+              }));
               break;
           }
         });
