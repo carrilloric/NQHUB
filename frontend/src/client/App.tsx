@@ -22,7 +22,7 @@ import ChartTest from "./pages/ChartTest";
 import Features from "./pages/Features";
 import BacktestingRuleBased from "./pages/BacktestingRuleBased";
 import BacktestingAI from "./pages/BacktestingAI";
-import MachineLearning from "./pages/MachineLearning";
+import MLLab from "./pages/MLLab";
 import Approval from "./pages/Approval";
 import Bot from "./pages/Bot";
 import BotManagement from "./pages/BotManagement";
@@ -173,7 +173,7 @@ const App = () => (
               path="/ml"
               element={
                 <ProtectedRoute>
-                  <MachineLearning />
+                  <MLLab />
                 </ProtectedRoute>
               }
             />
