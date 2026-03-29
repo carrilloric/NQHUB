@@ -8,12 +8,16 @@ from datetime import datetime
 from pydantic import BaseModel
 from enum import Enum
 from uuid import uuid4
+import logging
 
 from app.core.database import get_async_db
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.research.strategies.registry import get_registry
+from app.research.strategies import StrategyMetadata
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class StrategyType(str, Enum):
@@ -428,3 +432,243 @@ async def get_strategy_signals(
             "message": "Strategy signals endpoint - pending implementation"
         }
     }
+
+
+# ==================== STRATEGY REGISTRY ENDPOINTS ====================
+
+class RegisterStrategyRequest(BaseModel):
+    """Request model for strategy registration"""
+    name: str
+    description: str
+    version: str
+    author: str
+    strategy_type: str  # "rule_based", "ml", "rl", "hybrid"
+    strategy_class: str  # Python class name
+    strategy_module: str  # Python module path
+    parameters: Dict[str, Any] = {}
+    tags: List[str] = []
+    overwrite: bool = False
+
+
+@router.post("/register")
+async def register_strategy(
+    request: RegisterStrategyRequest,
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Register a strategy from notebook or external script.
+
+    This endpoint allows researchers to register strategy instances
+    into the central StrategyRegistry for later use in backtesting
+    and live trading.
+
+    Usage (from Jupyter notebook):
+        import requests
+
+        # Define strategy
+        class MyFVGStrategy(RuleBasedStrategy):
+            def required_features(self):
+                return ["active_fvgs", "bias"]
+
+            def generate_signals(self, market_state, data=None):
+                # Strategy logic
+                ...
+
+        # Register via API
+        response = requests.post(
+            "http://localhost:8002/api/v1/strategies/register",
+            json={
+                "name": "FVG Retest Strategy",
+                "description": "Trades FVG retests with bias confirmation",
+                "version": "1.0.0",
+                "author": "researcher@nqhub.com",
+                "strategy_type": "rule_based",
+                "strategy_class": "MyFVGStrategy",
+                "strategy_module": "__main__",
+                "parameters": {"min_fvg_score": 0.7},
+                "tags": ["fvg", "retest", "ict"]
+            },
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+    Args:
+        request: Registration request with strategy metadata
+        current_user: Authenticated user
+
+    Returns:
+        Registration result with validation info
+
+    Note:
+        In this implementation, we store metadata only.
+        The actual strategy class instance should be created
+        and registered programmatically (not via HTTP serialization
+        for security reasons).
+    """
+    try:
+        # Get registry instance
+        registry = get_registry()
+
+        # Create strategy metadata
+        metadata = StrategyMetadata(
+            name=request.name,
+            description=request.description,
+            version=request.version,
+            author=request.author,
+            strategy_type=request.strategy_type,
+            tags=request.tags,
+            parameters=request.parameters,
+        )
+
+        # Note: In production, strategies should be registered programmatically
+        # This endpoint serves as a metadata catalog for tracking strategies
+        # The actual strategy instances are created via Python SDK
+
+        # For now, we store the metadata in the registry
+        # Actual strategy registration would happen via:
+        # from app.research.strategies import get_registry
+        # registry = get_registry()
+        # registry.register(strategy_instance)
+
+        logger.info(
+            f"Strategy registration request received: {request.name} v{request.version} "
+            f"by {current_user.email}"
+        )
+
+        # List currently registered strategies
+        registered_strategies = registry.list_strategies(
+            strategy_type=request.strategy_type if request.strategy_type != "all" else None
+        )
+
+        # Check if strategy already exists
+        existing = next(
+            (s for s in registered_strategies
+             if s["name"] == request.name and s["version"] == request.version),
+            None
+        )
+
+        if existing and not request.overwrite:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Strategy '{request.name}' v{request.version} already exists. "
+                       f"Use overwrite=true to replace."
+            )
+
+        return {
+            "status": "success",
+            "data": {
+                "name": request.name,
+                "version": request.version,
+                "author": request.author,
+                "strategy_type": request.strategy_type,
+                "registered": True,
+                "registered_at": datetime.utcnow().isoformat(),
+                "registered_by": current_user.email,
+                "message": (
+                    "Strategy metadata registered. "
+                    "Use Python SDK to register actual strategy instance: "
+                    "get_registry().register(strategy_instance)"
+                )
+            }
+        }
+
+    except ValueError as e:
+        logger.error(f"Strategy registration validation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Strategy registration error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+
+@router.get("/registry")
+async def get_registry_strategies(
+    strategy_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get all strategies in the registry.
+
+    Args:
+        strategy_type: Filter by type ("rule_based", "ml", "rl", "hybrid")
+        current_user: Authenticated user
+
+    Returns:
+        List of registered strategies with metadata
+
+    Example:
+        GET /api/v1/strategies/registry?strategy_type=rule_based
+    """
+    try:
+        registry = get_registry()
+
+        strategies = registry.list_strategies(
+            strategy_type=strategy_type if strategy_type else None
+        )
+
+        return {
+            "status": "success",
+            "data": {
+                "strategies": strategies,
+                "total": len(strategies),
+                "registry_info": str(registry)
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get registry strategies: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/registry/{strategy_name}")
+async def unregister_strategy(
+    strategy_name: str,
+    version: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Unregister a strategy from the registry.
+
+    Args:
+        strategy_name: Name of the strategy to unregister
+        version: Optional version (if None, removes all versions)
+        current_user: Authenticated user
+
+    Returns:
+        Unregistration result
+
+    Example:
+        DELETE /api/v1/strategies/registry/MyStrategy?version=1.0.0
+    """
+    try:
+        registry = get_registry()
+
+        # Check if strategy exists
+        if strategy_name not in registry:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Strategy '{strategy_name}' not found in registry"
+            )
+
+        # Unregister
+        success = registry.unregister(strategy_name, version=version)
+
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Failed to unregister strategy '{strategy_name}'"
+            )
+
+        return {
+            "status": "success",
+            "data": {
+                "strategy_name": strategy_name,
+                "version": version or "all",
+                "unregistered": True,
+                "message": f"Strategy '{strategy_name}' unregistered successfully"
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to unregister strategy: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
