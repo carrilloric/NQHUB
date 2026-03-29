@@ -40,6 +40,7 @@ import RiskMonitor from "./pages/RiskMonitor";
 import AlphaLab from "./pages/AlphaLab";
 import { AppProvider, useAuth, Role } from "@/state/app";
 import { ServerTimeProvider } from "@/state/server-time";
+import { AssistantWidget } from "./components/AssistantWidget";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
       <AppProvider>
         <ServerTimeProvider>
           <BrowserRouter>
+            <AssistantWidget />
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
