@@ -29,7 +29,7 @@ class RiskConfig(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    bot = relationship("BotInstance", back_populates="risk_config")
+    bot = relationship("BotInstance", back_populates="risk_limits")
 
     __table_args__ = (
         Index('idx_risk_config_bot', 'bot_id'),

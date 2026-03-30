@@ -73,6 +73,13 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = "noreply@nqhub.com"
 
+    # ==================== ALERTS ====================
+    # Telegram Bot
+    TELEGRAM_BOT_TOKEN: str | None = None
+
+    # SendGrid
+    SENDGRID_API_KEY: str | None = None
+
     # ==================== FRONTEND ====================
     FRONTEND_URL: str = "http://localhost:3001"
 
@@ -82,6 +89,11 @@ class Settings(BaseSettings):
     # ==================== SUPERUSER ====================
     SUPERUSER_EMAIL: str = "admin@nqhub.com"
     SUPERUSER_PASSWORD: str = "change-this-password"
+
+    # ==================== GOOGLE CLOUD STORAGE ====================
+    GCS_BUCKET_NAME: str = "nqhub-datasets"
+    GCS_CREDENTIALS_JSON: str | None = None  # Service account JSON or path to JSON file
+    GCS_PROJECT_ID: str | None = None
 
     @property
     def is_development(self) -> bool:

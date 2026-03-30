@@ -28,6 +28,7 @@ class BotInstance(Base):
     approved_params = Column(JSONB, nullable=True)
     active_params = Column(JSONB, nullable=True)
     params_modified = Column(Boolean, server_default='false')
+    risk_config = Column(JSONB, nullable=True)  # Alert notification config
     last_heartbeat = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -38,7 +39,7 @@ class BotInstance(Base):
     state_logs = relationship("BotStateLog", back_populates="bot", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="bot", cascade="all, delete-orphan")
     trades = relationship("Trade", back_populates="bot", cascade="all, delete-orphan")
-    risk_config = relationship("RiskConfig", back_populates="bot", uselist=False, cascade="all, delete-orphan")
+    risk_limits = relationship("RiskConfig", back_populates="bot", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
         Index('idx_bot_instances_status', 'status'),
