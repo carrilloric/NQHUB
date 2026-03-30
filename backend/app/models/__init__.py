@@ -13,6 +13,7 @@ from app.models.strategy import Strategy, BacktestRun, StrategyApproval
 
 # ML Lab
 from app.models.ml_lab import ModelRegistry, DatasetRegistry
+from app.models.export_job import ExportJob
 
 # Production
 from app.models.production import BotInstance, BotStateLog, Order, Trade
@@ -28,7 +29,7 @@ __all__ = [
     # Strategy & Backtesting
     "Strategy", "BacktestRun", "StrategyApproval",
     # ML Lab
-    "ModelRegistry", "DatasetRegistry",
+    "ModelRegistry", "DatasetRegistry", "ExportJob",
     # Production
     "BotInstance", "BotStateLog", "Order", "Trade",
     # Risk & Config
