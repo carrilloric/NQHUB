@@ -80,6 +80,7 @@ class Order(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bot_id = Column(UUID(as_uuid=True), ForeignKey("bot_instances.id"), nullable=False)
+    bracket_id = Column(UUID(as_uuid=True), nullable=True)  # For bracket orders
     rithmic_order_id = Column(String(200), nullable=True)
     symbol = Column(String(20), server_default='NQ')
     side = Column(String(10), nullable=False)  # BUY | SELL
@@ -99,6 +100,7 @@ class Order(Base):
 
     __table_args__ = (
         Index('idx_orders_bot', 'bot_id'),
+        Index('idx_orders_bracket', 'bracket_id'),
         Index('idx_orders_status', 'status'),
         Index('idx_orders_submitted', 'submitted_at'),
         Index('idx_orders_rithmic', 'rithmic_order_id'),

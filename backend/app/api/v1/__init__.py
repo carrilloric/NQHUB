@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
-    features, backtesting, ml, approval, bots, orders, risk, trades,
+    features, backtesting, ml, approval, bots, orders, risk, trades, trade_journal,
     settings, strategies, assistant, assistant_tools, data_platform, live_trading, screener,
     data_export
 )
@@ -39,6 +39,7 @@ api_router.include_router(market_state.router, prefix="/market-state", tags=["ma
 # Trading & Strategy
 api_router.include_router(strategies.router, prefix="/strategies", tags=["strategies"])
 api_router.include_router(trades.router, prefix="/trades", tags=["trades"])
+api_router.include_router(trade_journal.router, prefix="/trade-journal", tags=["trade-journal"])
 
 # Risk & Settings
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])

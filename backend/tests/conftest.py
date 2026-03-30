@@ -16,13 +16,21 @@ import os
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.main import app
-from app.db.base_class import Base
-from app.db.session import get_db
+from app.db.session import Base, get_db  # Use the same Base as models
 from app.models.user import User, UserRole
 from app.core.security import create_access_token, hash_password
 
 # Import all models to register them with Base.metadata
-from app.models import user, password_reset, candlestick, patterns  # noqa: F401
+from app.models import (  # noqa: F401
+    User, UserRole, Invitation, PasswordResetToken,
+    Indicator, FeatureValue,
+    Strategy, BacktestRun, StrategyApproval,
+    ModelRegistry, DatasetRegistry,
+    BotInstance, BotStateLog, Order, Trade,
+    RiskConfig, ApexAccount, TradingSchedule
+)
+# Also import pattern models
+from app.models import candlestick, patterns  # noqa: F401
 
 
 # Test database URL - use a separate test database
