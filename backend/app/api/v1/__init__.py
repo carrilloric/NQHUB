@@ -2,10 +2,12 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
-    features, backtesting, ml, approval, bots, orders, risk, trades,
-    settings, strategies, assistant, assistant_tools, data_platform, live_trading, screener,
-    data_export
+    features, backtesting, ml, approval, bots, orders, risk, trades, trade_journal,
+    settings, strategies, data_platform, live_trading, screener, bot_management
+    # data_export  # Temporarily disabled
 )
+# Temporarily commented out due to merge conflicts in main branch
+# assistant, assistant_tools,
 from app.etl import routes as etl_routes
 
 api_router = APIRouter()
@@ -18,7 +20,7 @@ api_router.include_router(invitations.router, prefix="/invitations", tags=["invi
 api_router.include_router(data_platform.router, prefix="/data", tags=["data-platform"])
 
 # Dataset Export to GCS
-api_router.include_router(data_export.router, prefix="/data", tags=["data-export"])
+# api_router.include_router(data_export.router, prefix="/data", tags=["data-export"])
 
 # Pattern Detection API (CONTRACT-002)
 api_router.include_router(pattern_detection.router, prefix="/patterns", tags=["pattern-detection"])
@@ -30,6 +32,9 @@ api_router.include_router(screener.router, prefix="/backtest", tags=["backtest-s
 # Live Trading API (CONTRACT-004)
 api_router.include_router(live_trading.router, prefix="/bots", tags=["live-trading"])
 
+# Bot Management API (AUT-347)
+api_router.include_router(bot_management.router, prefix="/bot-management", tags=["bot-management"])
+
 # Data & Analysis
 api_router.include_router(candles.router, prefix="/candles", tags=["candles"])
 api_router.include_router(patterns.router, prefix="/patterns-legacy", tags=["patterns-legacy"])
@@ -39,14 +44,16 @@ api_router.include_router(market_state.router, prefix="/market-state", tags=["ma
 # Trading & Strategy
 api_router.include_router(strategies.router, prefix="/strategies", tags=["strategies"])
 api_router.include_router(trades.router, prefix="/trades", tags=["trades"])
+api_router.include_router(trade_journal.router, prefix="/trade-journal", tags=["trade-journal"])
 
 # Risk & Settings
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 
 # AI & Machine Learning
 api_router.include_router(ml.router, prefix="/ml", tags=["machine-learning"])
-api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
-api_router.include_router(assistant_tools.router, prefix="/assistant/tools", tags=["assistant-tools"])
+# Temporarily commented out due to merge conflicts in main branch
+# api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
+# api_router.include_router(assistant_tools.router, prefix="/assistant/tools", tags=["assistant-tools"])
 
 # Approval workflow
 api_router.include_router(approval.router, prefix="/approval", tags=["approval"])
