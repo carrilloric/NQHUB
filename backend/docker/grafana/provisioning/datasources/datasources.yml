@@ -1,0 +1,73 @@
+# config file version
+apiVersion: 1
+
+# list of datasources to insert/update
+datasources:
+  # Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    basicAuth: false
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: POST
+      prometheusType: Prometheus
+      prometheusVersion: 2.47.0
+      manageAlerts: true
+      alertmanagerUid: alertmanager
+      incrementalQuerying: true
+      incrementalQueryOverlapWindow: 10m
+      disableMetricsLookup: false
+      exemplarTraceIdDestinations:
+        - datasourceUid: tempo
+          name: traceID
+
+  # Loki datasource for logs
+  - name: Loki
+    type: loki
+    access: proxy
+    orgId: 1
+    url: http://loki:3100
+    basicAuth: false
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      alertmanagerUid: alertmanager
+      manageAlerts: false
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+
+  # PostgreSQL datasource (for custom queries)
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    orgId: 1
+    url: nqhub_postgres:5432
+    database: nqhub
+    user: nqhub
+    secureJsonData:
+      password: nqhub_password
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1500
+      timescaledb: true
+    version: 1
+    editable: true
+
+# list of datasources to delete from the database
+deleteDatasources:
+  - name: old-prometheus
+    orgId: 1

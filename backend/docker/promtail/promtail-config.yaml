@@ -1,0 +1,128 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            attrs:
+      - json:
+          expressions:
+            tag:
+          source: attrs
+      - regex:
+          expression: (?P<container_name>(?:[^|]*))\|(?P<image_name>(?:[^|]*))
+          source: tag
+      - timestamp:
+          format: RFC3339Nano
+          source: time
+      - labels:
+          stream:
+          container_name:
+          image_name:
+      - output:
+          source: output
+
+  # NQHUB Backend logs
+  - job_name: nqhub-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nqhub-backend
+          app: backend
+          __path__: /var/lib/docker/containers/*nqhub_backend*/*log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}'
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d+)\s+(?P<level>\w+)\s+(?P<logger>[\w\.]+):\s+(?P<message>.*)'
+      - labels:
+          level:
+          logger:
+      - timestamp:
+          format: '2006-01-02 15:04:05,000'
+          source: timestamp
+
+  # Bot logs with special handling
+  - job_name: bot-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: bot-logs
+          __path__: /var/lib/docker/containers/*bot*/*log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            log:
+            stream:
+      - regex:
+          expression: '^.*\[BOT-(?P<bot_id>\w+)\].*$'
+      - labels:
+          bot_id:
+      - match:
+          selector: '{job="bot-logs"} |~ "ERROR|CRITICAL"'
+          stages:
+            - metrics:
+                bot_errors_total:
+                  type: Counter
+                  description: "Total bot errors"
+                  source: bot_id
+                  config:
+                    action: inc
+
+  # WebSocket logs
+  - job_name: websocket-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: websocket
+          __path__: /var/lib/docker/containers/*/*log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            log:
+      - match:
+          selector: '{job="websocket"} |~ "WebSocket"'
+          stages:
+            - regex:
+                expression: 'WebSocket (?P<action>connected|disconnected) from (?P<client>\S+)'
+            - labels:
+                action:
+                client:
+
+  # System logs
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          __path__: /var/log/syslog
