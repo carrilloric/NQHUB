@@ -1,0 +1,117 @@
+groups:
+  - name: nqhub_alerts
+    interval: 30s
+    rules:
+      # Critical: Trailing Drawdown Alert
+      - alert: BotTrailingDrawdownCritical
+        expr: nqhub_bot_trailing_drawdown_pct > 80
+        for: 1m
+        labels:
+          severity: critical
+          component: trading
+        annotations:
+          summary: "Bot {{ $labels.bot_id }} trailing drawdown critical"
+          description: "Bot {{ $labels.bot_id }} has reached {{ $value }}% of trailing drawdown limit (threshold: 80%)"
+          action: "IMMEDIATE ACTION REQUIRED: Check bot position and consider emergency stop"
+
+      # Critical: Bot Heartbeat Lost
+      - alert: BotHeartbeatLost
+        expr: nqhub_bot_heartbeat_age_seconds > 120
+        for: 30s
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Bot {{ $labels.bot_id }} heartbeat lost"
+          description: "Bot {{ $labels.bot_id }} has not sent heartbeat for {{ $value }} seconds (threshold: 120s)"
+          action: "Check bot connection and restart if necessary"
+
+      # Warning: Daily Loss Approaching Limit
+      - alert: BotDailyLossWarning
+        expr: nqhub_bot_daily_loss_pct > 70
+        for: 2m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "Bot {{ $labels.bot_id }} daily loss warning"
+          description: "Bot {{ $labels.bot_id }} daily loss at {{ $value }}% of limit"
+
+      # Warning: High Order Rejection Rate
+      - alert: HighOrderRejectionRate
+        expr: rate(nqhub_orders_rejected_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "High order rejection rate for bot {{ $labels.bot_id }}"
+          description: "Bot {{ $labels.bot_id }} has {{ $value }} order rejections per minute"
+
+      # Warning: API High Latency
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(nqhub_api_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API latency high"
+          description: "95th percentile API latency is {{ $value }} seconds (threshold: 1.0s)"
+
+      # Critical: Backend Down
+      - alert: BackendDown
+        expr: up{job="nqhub-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "NQ-HUB backend is down"
+          description: "Backend service has been down for more than 1 minute"
+          action: "Check backend logs and restart service"
+
+      # Warning: High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage on host"
+          description: "Memory usage is above 85% (current: {{ $value | humanizePercentage }})"
+
+      # Warning: High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage on host"
+          description: "CPU usage is above 80% (current: {{ $value }}%)"
+
+      # Critical: Database Connection Lost
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "Cannot connect to PostgreSQL database"
+          action: "Check database connection and restart if necessary"
+
+      # Warning: WebSocket Connections Low
+      - alert: LowWebSocketConnections
+        expr: nqhub_websocket_connections_active < 1
+        for: 5m
+        labels:
+          severity: warning
+          component: websocket
+        annotations:
+          summary: "No active WebSocket connections"
+          description: "WebSocket connections count is {{ $value }}"
