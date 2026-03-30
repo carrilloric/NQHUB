@@ -25,6 +25,9 @@ from sqlalchemy import text
 from app.research.ict.models import FVG, OrderBlock, Direction
 from app.research.ict.fvg_detector import FVGDetector
 from app.research.ict.ob_detector import OrderBlockDetector
+from app.research.ict.patterns.liquidity_pool import LiquidityPool, LiquidityPoolDetector
+from app.research.ict.patterns.kill_zone import KillZone, KillZoneDetector
+from app.research.ict.patterns.breaker_block import BreakerBlock, BreakerBlockDetector
 
 
 class Session(str, Enum):
@@ -61,6 +64,12 @@ class MarketState:
     # Active patterns by timeframe
     active_fvgs: Dict[str, List[FVG]] = field(default_factory=dict)
     active_obs: Dict[str, List[OrderBlock]] = field(default_factory=dict)
+    active_liquidity_pools: Dict[str, List[LiquidityPool]] = field(default_factory=dict)
+    active_breaker_blocks: Dict[str, List[BreakerBlock]] = field(default_factory=dict)
+
+    # Kill Zones
+    active_kill_zones: List[KillZone] = field(default_factory=list)
+    is_in_kill_zone: bool = False
 
     # Key support/resistance levels
     key_levels: List[float] = field(default_factory=list)
@@ -84,12 +93,26 @@ class MarketState:
         for tf, obs in self.active_obs.items():
             active_obs_dict[tf] = [self._ob_to_dict(ob) for ob in obs]
 
+        active_lps_dict = {}
+        for tf, lps in self.active_liquidity_pools.items():
+            active_lps_dict[tf] = [self._lp_to_dict(lp) for lp in lps]
+
+        active_bbs_dict = {}
+        for tf, bbs in self.active_breaker_blocks.items():
+            active_bbs_dict[tf] = [self._bb_to_dict(bb) for bb in bbs]
+
+        active_kzs_dict = [self._kz_to_dict(kz) for kz in self.active_kill_zones]
+
         return {
             "timestamp": self.timestamp.isoformat(),
             "symbol": self.symbol,
             "bias": self.bias,
             "active_fvgs": active_fvgs_dict,
             "active_obs": active_obs_dict,
+            "active_liquidity_pools": active_lps_dict,
+            "active_breaker_blocks": active_bbs_dict,
+            "active_kill_zones": active_kzs_dict,
+            "is_in_kill_zone": self.is_in_kill_zone,
             "key_levels": self.key_levels,
             "session": self.session,
         }
@@ -121,6 +144,47 @@ class MarketState:
             "broken_at": ob.broken_at,
         }
 
+    @staticmethod
+    def _lp_to_dict(lp: LiquidityPool) -> dict:
+        """Convert LiquidityPool to dict"""
+        return {
+            "id": lp.id,
+            "type": lp.type.value,
+            "price_level": lp.price_level,
+            "zone_top": lp.zone_top,
+            "zone_bottom": lp.zone_bottom,
+            "touches": lp.touches,
+            "status": lp.status.value,
+            "sweep_score": lp.sweep_score,
+            "swept_at": lp.swept_at.isoformat() if lp.swept_at else None,
+        }
+
+    @staticmethod
+    def _bb_to_dict(bb: BreakerBlock) -> dict:
+        """Convert BreakerBlock to dict"""
+        return {
+            "id": bb.id,
+            "direction": bb.direction.value,
+            "original_ob_id": bb.original_ob_id,
+            "top": bb.top,
+            "bottom": bb.bottom,
+            "quality_score": bb.quality_score,
+            "status": bb.status.value,
+            "tested_count": bb.tested_count,
+            "break_candle_time": bb.break_candle_time.isoformat() if bb.break_candle_time else None,
+        }
+
+    @staticmethod
+    def _kz_to_dict(kz: KillZone) -> dict:
+        """Convert KillZone to dict"""
+        return {
+            "name": kz.name,
+            "start_time": kz.start_time.isoformat(),
+            "end_time": kz.end_time.isoformat(),
+            "description": kz.description,
+            "is_active": kz.is_active,
+        }
+
     def get_patterns(self, timeframe: str) -> dict:
         """
         Get all patterns for a specific timeframe.
@@ -129,11 +193,13 @@ class MarketState:
             timeframe: Timeframe string (e.g., "1min", "5min", "15min")
 
         Returns:
-            Dictionary with FVGs and OBs for the timeframe
+            Dictionary with all patterns for the timeframe
         """
         return {
             "fvgs": self.active_fvgs.get(timeframe, []),
             "obs": self.active_obs.get(timeframe, []),
+            "liquidity_pools": self.active_liquidity_pools.get(timeframe, []),
+            "breaker_blocks": self.active_breaker_blocks.get(timeframe, []),
         }
 
     def get_active_fvgs(self, timeframe: str, direction: Optional[str] = None) -> List[FVG]:
@@ -221,6 +287,9 @@ class MarketStateManager:
         # Initialize pattern detectors
         self.fvg_detector = FVGDetector(min_gap_atr_ratio=0.5)
         self.ob_detector = OrderBlockDetector(min_move_atr=1.5)
+        self.lp_detector = LiquidityPoolDetector(range_percent=0.01)
+        self.bb_detector = BreakerBlockDetector(self.ob_detector)
+        self.kz_detector = KillZoneDetector()
 
     async def update(self, candles: Dict[str, pd.DataFrame]) -> MarketState:
         """
@@ -262,12 +331,22 @@ class MarketStateManager:
             obs = self.ob_detector.detect(df)
             obs = self.ob_detector.update_lifecycle(obs, df)
 
+            # Detect Liquidity Pools
+            lps = self.lp_detector.detect(df, timeframe)
+
+            # Detect Breaker Blocks
+            bbs = self.bb_detector.detect(df, timeframe)
+
             # Filter only active patterns
             active_fvgs = [fvg for fvg in fvgs if fvg.status.value == "active"]
             active_obs = [ob for ob in obs if ob.status.value == "active"]
+            active_lps = [lp for lp in lps if lp.status.value == "active"]
+            active_bbs = [bb for bb in bbs if bb.status.value == "active"]
 
             market_state.active_fvgs[timeframe] = active_fvgs
             market_state.active_obs[timeframe] = active_obs
+            market_state.active_liquidity_pools[timeframe] = active_lps
+            market_state.active_breaker_blocks[timeframe] = active_bbs
 
             # Determine bias for this timeframe
             market_state.bias[timeframe] = self._calculate_bias(df, active_fvgs, active_obs)
@@ -277,6 +356,10 @@ class MarketStateManager:
 
         # Detect current session
         market_state.session = self._detect_session(timestamp)
+
+        # Detect active Kill Zones
+        market_state.active_kill_zones = self.kz_detector.get_active_kill_zones(timestamp)
+        market_state.is_in_kill_zone = self.kz_detector.is_in_kill_zone(timestamp)
 
         # Persist to Redis
         await self._persist_to_redis(market_state)
