@@ -3,7 +3,8 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
     features, backtesting, ml, approval, bots, orders, risk, trades,
-    settings, strategies, assistant, assistant_tools, data_platform, live_trading
+    settings, strategies, assistant, assistant_tools, data_platform, live_trading, screener,
+    data_export
 )
 from app.etl import routes as etl_routes
 
@@ -16,11 +17,15 @@ api_router.include_router(invitations.router, prefix="/invitations", tags=["invi
 # Data Platform API (CONTRACT-001)
 api_router.include_router(data_platform.router, prefix="/data", tags=["data-platform"])
 
+# Dataset Export to GCS
+api_router.include_router(data_export.router, prefix="/data", tags=["data-export"])
+
 # Pattern Detection API (CONTRACT-002)
 api_router.include_router(pattern_detection.router, prefix="/patterns", tags=["pattern-detection"])
 
 # Backtesting API (CONTRACT-003)
 api_router.include_router(backtesting.router, prefix="/backtest", tags=["backtesting"])
+api_router.include_router(screener.router, prefix="/backtest", tags=["backtest-screener"])
 
 # Live Trading API (CONTRACT-004)
 api_router.include_router(live_trading.router, prefix="/bots", tags=["live-trading"])
