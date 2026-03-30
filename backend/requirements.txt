@@ -58,3 +58,4 @@ langchain==0.3.7  # For SQL agent utilities
 vanna[chromadb,anthropic]==0.8.7  # NL to SQL with RAG
 chromadb==0.5.18  # Vector DB for Vanna
 vectorbtpro @ git+https://github.com/polakowo/vectorbt.pro.git
+nautilus_trader
