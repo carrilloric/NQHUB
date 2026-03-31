@@ -20,6 +20,7 @@ import WithLayout from "./pages/Placeholders";
 import ChartTest from "./pages/ChartTest";
 // New page imports
 import Features from "./pages/Features";
+import Backtesting from "./pages/Backtesting";
 import BacktestingRuleBased from "./pages/BacktestingRuleBased";
 import BacktestingAI from "./pages/BacktestingAI";
 import MLLab from "./pages/MLLab";
@@ -144,6 +145,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Features />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/backtesting"
+              element={
+                <ProtectedRoute>
+                  <Backtesting />
                 </ProtectedRoute>
               }
             />
