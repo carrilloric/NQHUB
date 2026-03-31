@@ -1,0 +1,974 @@
+openapi: 3.1.0
+info:
+  title: NQHUB Research & Backtesting API
+  description: "\n        Research & Backtesting REST API for NQ Futures trading strategies.\n\n        Provides endpoints\
+    \ for:\n        - Backtest execution (async via Celery)\n        - Results import from Jupyter notebooks\n        - Parameter\
+    \ optimization (grid search, walk-forward)\n        - Backtest screener with filters\n        - Strategy management (register,\
+    \ validate, list)\n\n        **NQ Constants:**\n        - tick_size = 0.25\n        - tick_value = $5.00\n        - point_value\
+    \ = $20.00\n\n        **Apex Account Defaults:**\n        - initial_capital = $25,000\n        - max_contracts = 4\n \
+    \       - trailing_threshold = $1,500\n        "
+  contact:
+    name: NQHUB Engineering
+    email: engineering@nqhub.io
+  license:
+    name: Proprietary
+  version: 2.0.0
+paths:
+  /research/backtest/run:
+    post:
+      tags:
+      - Research & Backtesting
+      summary: Launch backtest run
+      description: "Submit a backtest job for async execution via Celery.\n\n    The backtest runs with the specified strategy\
+        \ and parameters over the date range.\n    Returns a task ID for tracking progress via Celery status endpoints.\n\n\
+        \    **NQ Constants (hardcoded):**\n    - tick_size = 0.25\n    - tick_value = $5.00\n    - point_value = $20.00\n\
+        \n    **Default Values:**\n    - initial_capital = $25,000 (Apex account default)\n    - commission = 0.02% per trade\n\
+        \    - slippage = 0.01% per trade\n\n    **Process:**\n    1. Validate strategy exists and is active\n    2. Load\
+        \ historical data for date range and timeframe\n    3. Submit Celery task for async execution\n    4. Return task_id\
+        \ for progress tracking\n\n    **Celery Task Flow:**\n    - queued → running → completed/failed\n    - Results available\
+        \ via GET /backtest/screener after completion"
+      operationId: run_backtest_research_backtest_run_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Task ID and initial status for the backtest job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /research/backtest/results/import:
+    post:
+      tags:
+      - Research & Backtesting
+      summary: Import backtest results from Jupyter notebook
+      description: "Import backtest results generated in a Jupyter notebook.\n\n    Allows researchers to run custom backtests\
+        \ in notebooks and import\n    results into the database for comparison and analysis.\n\n    **Required Fields:**\n\
+        \    - strategy_id: Must reference an existing registered strategy\n    - notebook_path: Path to the .ipynb file\n\
+        \    - results_json: JSON containing metrics (total_return, sharpe_ratio, etc.)\n\n    **Process:**\n    1. Validate\
+        \ strategy_id exists\n    2. Parse results_json for required metrics\n    3. Run Apex compliance check (AUT-337)\n\
+        \    4. Store in database with status='completed'"
+      operationId: import_backtest_results_research_backtest_results_import_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestImportRequest'
+        required: true
+      responses:
+        '200':
+          description: Stored backtest results with assigned backtest_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResultsSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /research/backtest/optimize:
+    post:
+      tags:
+      - Research & Backtesting
+      summary: Optimize strategy parameters
+      description: "Run parameter optimization using grid search or walk-forward analysis.\n\n    **Optimization Methods:**\n\
+        \    - **grid_search**: Test all combinations in param_grid\n    - **walk_forward**: Rolling window optimization with\
+        \ out-of-sample testing\n\n    **Grid Search:**\n    - Tests every combination of parameters\n    - Returns best parameters\
+        \ by specified metric (Sharpe ratio default)\n    - Example: 3 values × 3 values × 2 values = 18 backtests\n\n   \
+        \ **Walk-Forward:**\n    - Splits data into n_splits windows\n    - Optimizes on in-sample, tests on out-of-sample\n\
+        \    - More robust to overfitting than grid search\n\n    **Process:**\n    1. Generate parameter combinations from\
+        \ param_grid\n    2. Submit Celery task for long-running optimization\n    3. Run each combination as a backtest\n\
+        \    4. Return best parameters and full results\n\n    **Warning:** Large param_grids can take hours. Monitor task\
+        \ progress via Celery."
+      operationId: optimize_strategy_research_backtest_optimize_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizeRequest'
+        required: true
+      responses:
+        '200':
+          description: Task ID for the optimization job and total combinations count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /research/backtest/screener:
+    get:
+      tags:
+      - Research & Backtesting
+      summary: List backtests with filters
+      description: "Retrieve backtest results with filtering and pagination.\n\n    **Filters:**\n    - strategy_id: Filter\
+        \ by specific strategy\n    - min_sharpe: Minimum Sharpe ratio threshold\n    - min_return: Minimum total return threshold\
+        \ (as decimal)\n    - apex_compliant_only: Only show Apex-compliant backtests\n\n    **Pagination:**\n    - limit:\
+        \ Results per page (default 50, max 500)\n    - offset: Skip first N results\n\n    **Sorting:**\n    - Results sorted\
+        \ by created_at DESC (newest first)\n    - Can be customized via query parameters (TODO)\n\n    **Use Cases:**\n \
+        \   - Find best-performing strategies\n    - Compare different parameter sets\n    - Filter for Apex-compliant runs\
+        \ only\n    - Review recent backtests"
+      operationId: get_backtest_screener_research_backtest_screener_get
+      parameters:
+      - name: strategy_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by strategy ID
+          title: Strategy Id
+        description: Filter by strategy ID
+      - name: min_sharpe
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: number
+            maximum: 10
+            minimum: -10
+          - type: 'null'
+          description: Minimum Sharpe ratio
+          title: Min Sharpe
+        description: Minimum Sharpe ratio
+      - name: min_return
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: number
+            maximum: 10
+            minimum: -1
+          - type: 'null'
+          description: Minimum total return (decimal)
+          title: Min Return
+        description: Minimum total return (decimal)
+      - name: apex_compliant_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          description: Only Apex-compliant backtests
+          default: false
+          title: Apex Compliant Only
+        description: Only Apex-compliant backtests
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          description: Results per page
+          default: 50
+          title: Limit
+        description: Results per page
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          description: Result offset
+          default: 0
+          title: Offset
+        description: Result offset
+      responses:
+        '200':
+          description: List of matching backtests with pagination info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestScreenerResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /research/strategies:
+    get:
+      tags:
+      - Research & Backtesting
+      summary: List registered strategies
+      description: "Retrieve all registered strategies available for backtesting.\n\n    **Returns:**\n    - All active strategies\
+        \ by default\n    - Includes metadata, parameter schema, and last usage timestamp\n\n    **Strategy Types:**\n   \
+        \ - rule_based: Traditional algorithmic strategies (e.g., SMA crossover)\n    - ml: Machine learning models (e.g.,\
+        \ Random Forest, XGBoost)\n    - dl: Deep learning models (e.g., LSTM, Transformer)\n    - rl: Reinforcement learning\
+        \ agents (e.g., DQN, PPO)\n\n    **Use Cases:**\n    - List available strategies for backtest submission\n    - Review\
+        \ strategy parameters before optimization\n    - Find strategies by type (rule_based, ml, dl, rl)"
+      operationId: list_strategies_research_strategies_get
+      parameters:
+      - name: type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by strategy type
+          examples:
+          - rule_based
+          - ml
+          - dl
+          - rl
+          title: Type
+        description: Filter by strategy type
+      - name: is_active_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          description: Only return active strategies
+          default: true
+          title: Is Active Only
+        description: Only return active strategies
+      responses:
+        '200':
+          description: List of registered strategies with metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StrategySchema'
+                title: Response List Strategies Research Strategies Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /research/strategies/register:
+    post:
+      tags:
+      - Research & Backtesting
+      summary: Register new strategy
+      description: "Register a new strategy for backtesting.\n\n    **Requirements:**\n    - Strategy must inherit from AbstractStrategy\
+        \ (AUT-335)\n    - Python file must be accessible at file_path\n    - Version must follow semantic versioning (e.g.,\
+        \ '1.0.0')\n\n    **Strategy Types:**\n    - rule_based: Traditional rule-based strategies\n    - ml: Machine learning\
+        \ models\n    - dl: Deep learning models\n    - rl: Reinforcement learning agents\n\n    **Validation Steps:**\n \
+        \   1. Load Python file from file_path\n    2. Verify inheritance from AbstractStrategy\n    3. Validate parameters_schema\
+        \ format\n    4. Check version uniqueness\n    5. Store in database with status='registered'\n\n    **Best Practice:**\n\
+        \    - Run POST /strategies/validate first to check for errors\n    - Use semantic versioning for version strings\n\
+        \    - Provide detailed parameter schema for optimization"
+      operationId: register_strategy_research_strategies_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyRegisterRequest'
+        required: true
+      responses:
+        '200':
+          description: Strategy ID and registration status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategyRegisterResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /research/strategies/validate:
+    post:
+      tags:
+      - Research & Backtesting
+      summary: Validate strategy before registration
+      description: "Validate a strategy file before registering it.\n\n    **Validation Checks:**\n    1. File exists and\
+        \ is readable\n    2. Valid Python syntax\n    3. Inherits from AbstractStrategy\n    4. Implements required methods\
+        \ (on_bar, on_order_filled, etc.)\n    5. Parameters schema is valid JSON\n\n    **Returns:**\n    - is_valid: Boolean\
+        \ indicating validation status\n    - errors: List of validation errors (blocking)\n    - warnings: List of non-blocking\
+        \ warnings\n\n    **Use Case:**\n    - Run before POST /strategies/register to catch errors early\n    - Verify strategy\
+        \ implementation without database changes"
+      operationId: validate_strategy_research_strategies_validate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyValidateRequest'
+        required: true
+      responses:
+        '200':
+          description: Validation result with errors and warnings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategyValidateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    BacktestImportRequest:
+      properties:
+        strategy_id:
+          type: string
+          title: Strategy Id
+          description: Strategy ID used in notebook
+        notebook_path:
+          type: string
+          title: Notebook Path
+          description: Path to Jupyter notebook file
+        results_json:
+          additionalProperties: true
+          type: object
+          title: Results Json
+          description: Backtest results as JSON (from notebook output)
+      type: object
+      required:
+      - strategy_id
+      - notebook_path
+      - results_json
+      title: BacktestImportRequest
+      description: 'Request to import backtest results from Jupyter notebook.
+
+
+        Allows researchers to run backtests in notebooks and import results.'
+      example:
+        notebook_path: /research/notebooks/ml_backtest_20240315.ipynb
+        results_json:
+          sharpe_ratio: 2.1
+          total_return: 0.15
+          trades: 200
+        strategy_id: custom_ml_v2
+    BacktestResultsSchema:
+      properties:
+        backtest_id:
+          type: string
+          title: Backtest Id
+          description: Unique backtest run identifier
+        strategy_id:
+          type: string
+          title: Strategy Id
+          description: Strategy used for this backtest
+        status:
+          type: string
+          title: Status
+          description: Backtest status
+          examples:
+          - completed
+          - failed
+          - running
+        total_return:
+          type: number
+          title: Total Return
+          description: Total return as decimal (e.g., 0.15 = 15%)
+        sharpe_ratio:
+          type: number
+          title: Sharpe Ratio
+          description: Sharpe ratio (risk-adjusted returns)
+        sortino_ratio:
+          type: number
+          title: Sortino Ratio
+          description: Sortino ratio (downside risk-adjusted returns)
+        max_drawdown:
+          type: number
+          title: Max Drawdown
+          description: Maximum drawdown as decimal (e.g., -0.10 = -10%)
+        win_rate:
+          type: number
+          title: Win Rate
+          description: Percentage of winning trades (0.0 to 1.0)
+        profit_factor:
+          type: number
+          title: Profit Factor
+          description: Ratio of gross profit to gross loss
+        total_trades:
+          type: integer
+          title: Total Trades
+          description: Total number of trades executed
+        apex_compliant:
+          type: boolean
+          title: Apex Compliant
+          description: Whether backtest passed Apex compliance checks (AUT-337)
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+          description: Backtest creation timestamp (UTC)
+      type: object
+      required:
+      - backtest_id
+      - strategy_id
+      - status
+      - total_return
+      - sharpe_ratio
+      - sortino_ratio
+      - max_drawdown
+      - win_rate
+      - profit_factor
+      - total_trades
+      - apex_compliant
+      - created_at
+      title: BacktestResultsSchema
+      description: 'Backtest results with performance metrics.
+
+
+        Retrieved via GET /backtest/screener or after task completion.'
+      example:
+        apex_compliant: true
+        backtest_id: bt_20240315_001
+        created_at: '2024-03-15T14:30:00Z'
+        max_drawdown: -0.0856
+        profit_factor: 1.42
+        sharpe_ratio: 1.85
+        sortino_ratio: 2.15
+        status: completed
+        strategy_id: sma_crossover_v1
+        total_return: 0.1234
+        total_trades: 156
+        win_rate: 0.62
+    BacktestRunRequest:
+      properties:
+        strategy_id:
+          type: string
+          title: Strategy Id
+          description: ID of the registered strategy to backtest
+          examples:
+          - sma_crossover_v1
+          - rsi_mean_reversion
+        timeframe:
+          type: string
+          title: Timeframe
+          description: Candlestick timeframe
+          examples:
+          - 1min
+          - 5min
+          - 15min
+          - 1h
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+          description: Backtest start date (inclusive)
+          examples:
+          - '2024-01-01'
+        end_date:
+          type: string
+          format: date
+          title: End Date
+          description: Backtest end date (inclusive)
+          examples:
+          - '2024-12-31'
+        commission:
+          type: number
+          maximum: 0.01
+          minimum: 0.0
+          title: Commission
+          description: Commission per trade (as decimal, e.g., 0.0002 = 0.02%)
+          default: 0.0002
+        slippage:
+          type: number
+          maximum: 0.01
+          minimum: 0.0
+          title: Slippage
+          description: Slippage per trade (as decimal, e.g., 0.0001 = 0.01%)
+          default: 0.0001
+        initial_capital:
+          type: number
+          maximum: 1000000.0
+          minimum: 1000.0
+          title: Initial Capital
+          description: Initial capital for backtest (Apex $25K default)
+          default: 25000.0
+        parameters:
+          additionalProperties: true
+          type: object
+          title: Parameters
+          description: 'Strategy-specific parameters override (e.g., {''sma_period'': 20})'
+          examples:
+          - rsi_threshold: 30
+            sma_fast: 10
+            sma_slow: 50
+      type: object
+      required:
+      - strategy_id
+      - timeframe
+      - start_date
+      - end_date
+      title: BacktestRunRequest
+      description: 'Request to launch a backtest run.
+
+
+        Submitted via POST /backtest/run, executed async via Celery.'
+      example:
+        commission: 0.0002
+        end_date: '2024-06-30'
+        initial_capital: 25000.0
+        parameters:
+          sma_fast: 10
+          sma_slow: 50
+        slippage: 0.0001
+        start_date: '2024-01-01'
+        strategy_id: sma_crossover_v1
+        timeframe: 5min
+    BacktestRunResponse:
+      properties:
+        task_id:
+          type: string
+          title: Task Id
+          description: Celery task ID for async execution tracking
+        status:
+          type: string
+          title: Status
+          description: Initial task status
+          examples:
+          - queued
+          - running
+          - completed
+          - failed
+        backtest_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Backtest Id
+          description: Backtest run ID (assigned when task starts)
+      type: object
+      required:
+      - task_id
+      - status
+      title: BacktestRunResponse
+      description: 'Response after submitting a backtest run.
+
+
+        Contains Celery task ID for progress tracking.'
+      example:
+        status: queued
+        task_id: a8b3c4d5-e6f7-8g9h-0i1j-2k3l4m5n6o7p
+    BacktestScreenerResponse:
+      properties:
+        total:
+          type: integer
+          title: Total
+          description: Total number of matching backtests
+        results:
+          items:
+            $ref: '#/components/schemas/BacktestResultsSchema'
+          type: array
+          title: Results
+          description: List of backtest results
+        limit:
+          type: integer
+          title: Limit
+          description: Results per page
+        offset:
+          type: integer
+          title: Offset
+          description: Current offset
+      type: object
+      required:
+      - total
+      - results
+      - limit
+      - offset
+      title: BacktestScreenerResponse
+      description: 'Response from backtest screener endpoint.
+
+
+        Returns list of matching backtests with pagination info.'
+      example:
+        limit: 50
+        offset: 0
+        results:
+        - apex_compliant: true
+          backtest_id: bt_20240315_001
+          created_at: '2024-03-15T14:30:00Z'
+          max_drawdown: -0.0856
+          profit_factor: 1.42
+          sharpe_ratio: 1.85
+          sortino_ratio: 2.15
+          status: completed
+          strategy_id: sma_crossover_v1
+          total_return: 0.1234
+          total_trades: 156
+          win_rate: 0.62
+        total: 156
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    OptimizeRequest:
+      properties:
+        strategy_id:
+          type: string
+          title: Strategy Id
+          description: Strategy to optimize
+        method:
+          type: string
+          title: Method
+          description: Optimization method
+          examples:
+          - grid_search
+          - walk_forward
+        param_grid:
+          additionalProperties:
+            items: {}
+            type: array
+          type: object
+          title: Param Grid
+          description: 'Parameter grid for optimization (e.g., {''sma_period'': [10, 20, 50]})'
+        n_splits:
+          type: integer
+          maximum: 20.0
+          minimum: 2.0
+          title: N Splits
+          description: Number of splits for walk-forward optimization
+          default: 5
+        timeframe:
+          type: string
+          title: Timeframe
+          description: Candlestick timeframe
+          default: 1min
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+          description: Optimization start date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+          description: Optimization end date
+      type: object
+      required:
+      - strategy_id
+      - method
+      - param_grid
+      - start_date
+      - end_date
+      title: OptimizeRequest
+      description: 'Request to optimize strategy parameters.
+
+
+        Supports grid search or walk-forward optimization.'
+      example:
+        end_date: '2024-12-31'
+        method: grid_search
+        n_splits: 5
+        param_grid:
+          rsi_threshold:
+          - 30
+          - 40
+          - 50
+          sma_fast:
+          - 5
+          - 10
+          - 20
+          sma_slow:
+          - 30
+          - 50
+          - 100
+        start_date: '2024-01-01'
+        strategy_id: sma_crossover_v1
+        timeframe: 5min
+    OptimizeResponse:
+      properties:
+        task_id:
+          type: string
+          title: Task Id
+          description: Celery task ID for optimization job
+        status:
+          type: string
+          title: Status
+          description: Initial task status
+          examples:
+          - queued
+          - running
+        total_combinations:
+          type: integer
+          title: Total Combinations
+          description: Total parameter combinations to test
+      type: object
+      required:
+      - task_id
+      - status
+      - total_combinations
+      title: OptimizeResponse
+      description: 'Response after submitting optimization job.
+
+
+        Returns task ID for tracking the long-running optimization process.'
+      example:
+        status: queued
+        task_id: opt_a1b2c3d4-e5f6-7g8h-9i0j
+        total_combinations: 27
+    StrategyRegisterRequest:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 3
+          title: Name
+          description: Strategy name
+        version:
+          type: string
+          pattern: ^\d+\.\d+\.\d+$
+          title: Version
+          description: Version string (e.g., '1.0.0')
+        file_path:
+          type: string
+          title: File Path
+          description: Path to strategy Python file
+        type:
+          type: string
+          title: Type
+          description: Strategy type
+          examples:
+          - rule_based
+          - ml
+          - dl
+          - rl
+        description:
+          type: string
+          title: Description
+          description: Optional strategy description
+          default: ''
+        parameters_schema:
+          additionalProperties: true
+          type: object
+          title: Parameters Schema
+          description: Optional JSON schema for parameters
+      type: object
+      required:
+      - name
+      - version
+      - file_path
+      - type
+      title: StrategyRegisterRequest
+      description: 'Request to register a new strategy.
+
+
+        Strategy class must inherit from AbstractStrategy (AUT-335).'
+      example:
+        description: Simple moving average crossover with RSI filter
+        file_path: /strategies/sma_crossover.py
+        name: SMA Crossover
+        parameters_schema:
+          sma_fast:
+            default: 10
+            type: integer
+          sma_slow:
+            default: 50
+            type: integer
+        type: rule_based
+        version: 1.0.0
+    StrategyRegisterResponse:
+      properties:
+        strategy_id:
+          type: string
+          title: Strategy Id
+          description: Unique ID assigned to the registered strategy
+        status:
+          type: string
+          title: Status
+          description: Registration status
+          examples:
+          - registered
+          - failed
+        message:
+          type: string
+          title: Message
+          description: Additional information or error message
+          default: ''
+      type: object
+      required:
+      - strategy_id
+      - status
+      title: StrategyRegisterResponse
+      description: 'Response after registering a strategy.
+
+
+        Returns the assigned strategy ID.'
+      example:
+        message: Strategy successfully registered and validated
+        status: registered
+        strategy_id: sma_crossover_v1
+    StrategySchema:
+      properties:
+        id:
+          type: string
+          title: Id
+          description: Unique strategy identifier
+        name:
+          type: string
+          title: Name
+          description: Human-readable strategy name
+        version:
+          type: string
+          title: Version
+          description: Strategy version (e.g., 'v1.2.3')
+        type:
+          type: string
+          title: Type
+          description: Strategy type
+          examples:
+          - rule_based
+          - ml
+          - dl
+          - rl
+        description:
+          type: string
+          title: Description
+          description: Strategy description and logic summary
+        parameters_schema:
+          additionalProperties: true
+          type: object
+          title: Parameters Schema
+          description: JSON schema for strategy parameters
+        last_used:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Used
+          description: Last time this strategy was used in a backtest
+        is_active:
+          type: boolean
+          title: Is Active
+          description: Whether strategy is active and available for use
+      type: object
+      required:
+      - id
+      - name
+      - version
+      - type
+      - description
+      - parameters_schema
+      - is_active
+      title: StrategySchema
+      description: 'Strategy metadata and configuration.
+
+
+        Retrieved via GET /strategies or after registration.'
+      example:
+        description: Simple moving average crossover strategy with RSI filter
+        id: sma_crossover_v1
+        is_active: true
+        last_used: '2024-03-15T10:30:00Z'
+        name: SMA Crossover
+        parameters_schema:
+          rsi_period:
+            default: 14
+            type: integer
+          rsi_threshold:
+            default: 30
+            type: integer
+          sma_fast:
+            default: 10
+            max: 50
+            min: 5
+            type: integer
+          sma_slow:
+            default: 50
+            max: 200
+            min: 20
+            type: integer
+        type: rule_based
+        version: 1.0.0
+    StrategyValidateRequest:
+      properties:
+        file_path:
+          type: string
+          title: File Path
+          description: Path to strategy Python file to validate
+        type:
+          type: string
+          title: Type
+          description: Expected strategy type
+          examples:
+          - rule_based
+          - ml
+          - dl
+          - rl
+      type: object
+      required:
+      - file_path
+      - type
+      title: StrategyValidateRequest
+      description: 'Request to validate strategy before registration.
+
+
+        Checks syntax, inheritance from AbstractStrategy, and parameter schema.'
+      example:
+        file_path: /strategies/new_strategy.py
+        type: rule_based
+    StrategyValidateResponse:
+      properties:
+        is_valid:
+          type: boolean
+          title: Is Valid
+          description: Whether strategy passed validation
+        errors:
+          items:
+            type: string
+          type: array
+          title: Errors
+          description: Validation error messages (empty if valid)
+        warnings:
+          items:
+            type: string
+          type: array
+          title: Warnings
+          description: Non-blocking warnings
+      type: object
+      required:
+      - is_valid
+      title: StrategyValidateResponse
+      description: 'Response from strategy validation.
+
+
+        Returns validation errors if any.'
+      example:
+        errors: []
+        is_valid: true
+        warnings:
+        - Parameter 'risk_per_trade' not defined in schema
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
