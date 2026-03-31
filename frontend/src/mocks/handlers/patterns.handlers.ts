@@ -25,7 +25,7 @@ const generateTimestamps = (count: number, startDate: Date = new Date()) => {
   });
 };
 
-// Mock FVG data
+// Mock FVG data - AUT-341: NQ hardcoded
 const generateMockFVGs = (count: number = 20): FVGPattern[] => {
   const timestamps = generateTimestamps(count);
   const significances = ['MICRO', 'SMALL', 'MEDIUM', 'LARGE', 'EXTREME'] as const;
@@ -39,7 +39,7 @@ const generateMockFVGs = (count: number = 20): FVGPattern[] => {
 
     return {
       id: i + 1,
-      symbol: 'NQH25',
+      symbol: 'NQ',
       timeframe: '5min' as const,
       formation_time: timestamp,
       gap_high: basePrice + (isBullish ? gapSize : 0),
@@ -60,7 +60,7 @@ const generateMockFVGs = (count: number = 20): FVGPattern[] => {
   });
 };
 
-// Mock Order Block data
+// Mock Order Block data - AUT-341: NQ hardcoded
 const generateMockOrderBlocks = (count: number = 20): OrderBlockPattern[] => {
   const timestamps = generateTimestamps(count);
   const types = ['BULLISH OB', 'BEARISH OB', 'STRONG BULLISH OB', 'STRONG BEARISH OB'] as const;
@@ -75,7 +75,7 @@ const generateMockOrderBlocks = (count: number = 20): OrderBlockPattern[] => {
 
     return {
       id: i + 1,
-      symbol: 'NQH25',
+      symbol: 'NQ',
       timeframe: '5min' as const,
       formation_time: timestamp,
       ob_high: basePrice + obRange,
@@ -94,7 +94,7 @@ const generateMockOrderBlocks = (count: number = 20): OrderBlockPattern[] => {
   });
 };
 
-// Mock Liquidity Pool data
+// Mock Liquidity Pool data - AUT-341: NQ hardcoded
 const generateMockLiquidityPools = (count: number = 20): LiquidityPoolPattern[] => {
   const timestamps = generateTimestamps(count);
   const poolTypes = ['EQH', 'EQL', 'NYH', 'NYL', 'ASH', 'ASL', 'LSH', 'LSL', 'SWING_HIGH', 'SWING_LOW'] as const;
@@ -107,7 +107,7 @@ const generateMockLiquidityPools = (count: number = 20): LiquidityPoolPattern[] 
 
     return {
       id: i + 1,
-      symbol: 'NQH25',
+      symbol: 'NQ',
       timeframe: '5min' as const,
       formation_time: timestamp,
       zone_high: basePrice + zoneHeight,
@@ -327,7 +327,7 @@ export const patternsHandlers = [
 
     const snapshot: MarketStateSnapshot = {
       timestamp: new Date().toISOString(),
-      symbol: params.symbol || 'NQH25',
+      symbol: params.symbol || 'NQ',
       timeframe: (params.timeframe || '5min') as any,
       current_price: currentPrice,
       active_patterns: {
