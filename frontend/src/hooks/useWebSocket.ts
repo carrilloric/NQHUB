@@ -12,7 +12,7 @@
  *   }, [subscribe]);
  */
 import { useEffect } from 'react';
-import { useWebSocketStore } from '@/stores/websocketStore';
+import { useWebSocketStore } from '../stores/websocketStore';
 
 type Channel =
   | 'price'
