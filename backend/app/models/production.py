@@ -80,32 +80,64 @@ class Order(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bot_id = Column(UUID(as_uuid=True), ForeignKey("bot_instances.id"), nullable=False)
-    rithmic_order_id = Column(String(200), nullable=True)
+
+    # Order identifiers
+    client_order_id = Column(String(100), unique=True, nullable=False)
+    broker_order_id = Column(String(100), nullable=True)  # Same as rithmic_order_id
+    rithmic_order_id = Column(String(200), nullable=True)  # Legacy, kept for backwards compatibility
+
+    # Bracket order fields
+    bracket_role = Column(String(10), nullable=True)  # 'ENTRY' | 'TP' | 'SL' | NULL
+    parent_order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=True)
+
+    # Order details
     symbol = Column(String(20), server_default='NQ')
     side = Column(String(10), nullable=False)  # BUY | SELL
-    type = Column(String(20), nullable=False)  # MARKET | LIMIT | STOP
-    quantity = Column(Integer, nullable=False)
+    order_type = Column(String(20), nullable=False)  # MARKET | LIMIT | STOP
+    type = Column(String(20), nullable=False)  # Legacy, kept for backwards compatibility
+    contracts = Column(Integer, nullable=False)
+    quantity = Column(Integer, nullable=False)  # Legacy, kept for backwards compatibility
     price = Column(DECIMAL(12, 2), nullable=True)
+
+    # Fill information
     fill_price = Column(DECIMAL(12, 2), nullable=True)
-    status = Column(String(50), server_default='PENDING')
+    fill_time = Column(DateTime(timezone=True), nullable=True)
+
+    # P&L tracking
+    gross_pnl = Column(DECIMAL(15, 2), nullable=True)
+    net_pnl = Column(DECIMAL(15, 2), nullable=True)
+    commission = Column(DECIMAL(10, 2), nullable=True)
+
+    # Status tracking
+    status = Column(String(50), server_default='PENDING_SUBMIT')  # PENDING_SUBMIT, SUBMITTED, ACCEPTED, FILLED, REJECTED, CANCELLED, FAILED
+    rejection_reason = Column(Text, nullable=True)
+
+    # Timestamps
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
-    filled_at = Column(DateTime(timezone=True), nullable=True)
+    filled_at = Column(DateTime(timezone=True), nullable=True)  # Legacy, kept for backwards compatibility
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     bot = relationship("BotInstance", back_populates="orders")
     entry_trades = relationship("Trade", foreign_keys="Trade.entry_order_id", back_populates="entry_order")
     exit_trades = relationship("Trade", foreign_keys="Trade.exit_order_id", back_populates="exit_order")
+    parent_order = relationship("Order", remote_side=[id], foreign_keys=[parent_order_id])
 
     __table_args__ = (
         Index('idx_orders_bot', 'bot_id'),
         Index('idx_orders_status', 'status'),
         Index('idx_orders_submitted', 'submitted_at'),
         Index('idx_orders_rithmic', 'rithmic_order_id'),
+        Index('idx_orders_client_order_id', 'client_order_id'),
+        Index('idx_orders_broker_order_id', 'broker_order_id'),
+        Index('idx_orders_bracket_role', 'bracket_role'),
+        Index('idx_orders_parent_order_id', 'parent_order_id'),
     )
 
     def __repr__(self):
-        return f"<Order {self.side} {self.quantity}x @ {self.price} ({self.status})>"
+        role_str = f" ({self.bracket_role})" if self.bracket_role else ""
+        return f"<Order {self.side} {self.contracts}x @ {self.price} ({self.status}){role_str}>"
 
 
 class Trade(Base):
