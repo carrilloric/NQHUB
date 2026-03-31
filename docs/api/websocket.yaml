@@ -1,0 +1,732 @@
+asyncapi: '2.6.0'
+
+info:
+  title: NQHUB WebSocket API
+  version: '1.0.0'
+  description: |
+    Real-time trading data via WebSocket for NQHUB trading platform.
+
+    **Architecture:**
+    - Backend: FastAPI WebSocket server (AUT-352)
+    - Event Bus: Redis pub/sub (AUT-366)
+    - Frontend: React WS client hook (AUT-376)
+
+    **NQ Futures Constants (hardcoded):**
+    - tick_size = 0.25
+    - tick_value = $5.00
+    - point_value = $20.00
+
+    **Authentication:**
+    - JWT token required on connection
+    - Send token in query param: `ws://host/ws/live?token=<jwt>`
+
+    **Protocol:**
+    - Client subscribes to channels on connect
+    - Server pushes events to subscribed channels
+    - All timestamps in UTC ISO-8601 format
+  contact:
+    name: NQHUB Engineering
+    email: engineering@nqhub.io
+  license:
+    name: Proprietary
+
+servers:
+  production:
+    url: wss://{host}/ws/live
+    protocol: wss
+    description: Production WebSocket server
+    variables:
+      host:
+        default: nqhub.railway.app
+        description: Production server hostname
+
+  development:
+    url: ws://localhost:8002/ws/live
+    protocol: ws
+    description: Local development server
+
+channels:
+  price:
+    description: |
+      Completed OHLCV candles by timeframe.
+
+      **Update Frequency:** Real-time (on candle completion)
+      **Channel Format:** `nqhub.candle.{timeframe}`
+      **Examples:** `nqhub.candle.1min`, `nqhub.candle.5min`, `nqhub.candle.1h`
+
+      **Supported Timeframes:**
+      - 30s, 1min, 5min, 15min, 1h, 4h, 1d, 1w
+    subscribe:
+      operationId: onPrice
+      summary: Subscribe to price updates
+      message:
+        $ref: '#/components/messages/CandleEvent'
+
+  orderflow:
+    description: |
+      Delta and Point of Control (POC) data per candle.
+
+      **Update Frequency:** Real-time (on candle completion)
+      **Channel Format:** `nqhub.orderflow.{timeframe}`
+      **Note:** This is a subset of CandleEvent focused on delta/POC fields
+
+      **Fields:**
+      - delta: Buy volume - Sell volume
+      - poc: Price level with highest volume
+    subscribe:
+      operationId: onOrderflow
+      summary: Subscribe to orderflow updates
+      message:
+        $ref: '#/components/messages/CandleEvent'
+
+  patterns:
+    description: |
+      ICT patterns detected in real-time.
+
+      **Update Frequency:** Real-time (on pattern detection)
+      **Channel Format:** `nqhub.pattern.{type}`
+      **Examples:** `nqhub.pattern.fvg`, `nqhub.pattern.ob`, `nqhub.pattern.lp`
+
+      **Pattern Types:**
+      - fvg: Fair Value Gap
+      - ob: Order Block
+      - lp: Liquidity Pool
+      - bb: Breaker Block
+
+      **Pattern States:**
+      - active: Pattern detected and unmitigated
+      - mitigated: Price has interacted with pattern zone
+      - broken: Price has invalidated the pattern
+    subscribe:
+      operationId: onPattern
+      summary: Subscribe to pattern detection updates
+      message:
+        $ref: '#/components/messages/PatternEvent'
+
+  orders:
+    description: |
+      Order status change events.
+
+      **Update Frequency:** Real-time (on state change)
+      **Channel Format:** `exec.order.{status}`
+      **Examples:** `exec.order.submitted`, `exec.order.filled`, `exec.order.rejected`
+
+      **Order Statuses:**
+      - SUBMITTED: Order sent to broker
+      - FILLED: Order fully executed
+      - REJECTED: Order rejected by broker
+      - CANCELLED: Order cancelled
+
+      **Bracket Orders:**
+      - ENTRY: Main entry order
+      - TP: Take Profit order
+      - SL: Stop Loss order
+    subscribe:
+      operationId: onOrder
+      summary: Subscribe to order status updates
+      message:
+        $ref: '#/components/messages/OrderEvent'
+
+  positions:
+    description: |
+      Open positions updated every 1 second.
+
+      **Update Frequency:** 1 second (while positions are open)
+      **Channel:** `exec.position.update`
+
+      **PNL Calculation:**
+      - Unrealized PNL in dollars
+      - Unrealized PNL in ticks (for NQ: PNL / $5.00)
+
+      **Fields:**
+      - entry_price: Average entry price
+      - current_price: Latest market price
+      - unrealized_pnl: Current profit/loss in dollars
+    subscribe:
+      operationId: onPosition
+      summary: Subscribe to position updates
+      message:
+        $ref: '#/components/messages/PositionEvent'
+
+  portfolio:
+    description: |
+      Portfolio snapshot updated every 5 seconds.
+
+      **Update Frequency:** 5 seconds
+      **Channel:** `nqhub.portfolio.snapshot`
+
+      **Snapshot Contents:**
+      - Total account balance
+      - Total unrealized PNL
+      - Total realized PNL for the day
+      - Number of open positions
+      - Win rate statistics
+    subscribe:
+      operationId: onPortfolio
+      summary: Subscribe to portfolio snapshots
+      message:
+        $ref: '#/components/messages/PortfolioEvent'
+
+  risk:
+    description: |
+      Risk checks and kill switch events (**HIGHEST PRIORITY**).
+
+      ⚠️ **CRITICAL PRIORITY**: This channel has maximum priority and must be processed before all other channels.
+
+      **Update Frequency:** Real-time (on risk event)
+      **Channels:**
+      - `nqhub.risk.check`: Pre-trade risk check results
+      - `nqhub.risk.kill_switch`: Kill switch activation (EMERGENCY)
+
+      **Risk Check Events:**
+      - Generated before every order submission
+      - Can reject orders or trigger kill switch
+      - Monitors: account balance, drawdown, position size, daily loss limits
+
+      **Kill Switch Events:**
+      - Manual activation by user
+      - Automatic trigger by circuit breaker
+      - Immediately closes all positions and cancels all orders
+      - Scope: per_bot (single bot) or global (all bots)
+
+      **IMPORTANT:** Frontend MUST prioritize this channel and display kill switch alerts immediately.
+    subscribe:
+      operationId: onRisk
+      summary: Subscribe to risk events (HIGHEST PRIORITY)
+      messages:
+        oneOf:
+          - $ref: '#/components/messages/RiskCheckEvent'
+          - $ref: '#/components/messages/KillSwitchEvent'
+
+  bot:
+    description: |
+      Bot status change events.
+
+      **Update Frequency:** Real-time (on state change)
+      **Channel:** `nqhub.bot.status`
+
+      **Bot States:**
+      - INITIALIZING: Bot starting up
+      - RUNNING: Bot actively trading
+      - PAUSED: Bot paused by user
+      - STOPPED: Bot stopped gracefully
+      - ERROR: Bot encountered an error
+      - KILLED: Bot killed by kill switch
+
+      **Use Cases:**
+      - Display bot status in UI
+      - Enable/disable trading controls
+      - Show error messages
+    subscribe:
+      operationId: onBot
+      summary: Subscribe to bot status updates
+      message:
+        $ref: '#/components/messages/BotStatusEvent'
+
+components:
+  messages:
+    SubscribeMessage:
+      name: SubscribeMessage
+      title: Subscribe to channels
+      summary: Client sends this message to subscribe/unsubscribe from channels
+      payload:
+        $ref: '#/components/schemas/SubscribeMessage'
+
+    CandleEvent:
+      name: CandleEvent
+      title: Candle completed event
+      summary: New completed OHLCV candle
+      payload:
+        $ref: '#/components/schemas/CandleEvent'
+
+    PatternEvent:
+      name: PatternEvent
+      title: Pattern detected event
+      summary: ICT pattern detected
+      payload:
+        $ref: '#/components/schemas/PatternEvent'
+
+    RiskCheckEvent:
+      name: RiskCheckEvent
+      title: Risk check result
+      summary: Pre-trade risk check result
+      payload:
+        $ref: '#/components/schemas/RiskCheckEvent'
+
+    KillSwitchEvent:
+      name: KillSwitchEvent
+      title: Kill switch activated
+      summary: Emergency kill switch triggered (HIGHEST PRIORITY)
+      payload:
+        $ref: '#/components/schemas/KillSwitchEvent'
+
+    OrderEvent:
+      name: OrderEvent
+      title: Order status change
+      summary: Order status updated
+      payload:
+        $ref: '#/components/schemas/OrderEvent'
+
+    PositionEvent:
+      name: PositionEvent
+      title: Position update
+      summary: Open position updated
+      payload:
+        $ref: '#/components/schemas/PositionEvent'
+
+    PortfolioEvent:
+      name: PortfolioEvent
+      title: Portfolio snapshot
+      summary: Account portfolio snapshot
+      payload:
+        $ref: '#/components/schemas/PortfolioEvent'
+
+    BotStatusEvent:
+      name: BotStatusEvent
+      title: Bot status change
+      summary: Bot state changed
+      payload:
+        $ref: '#/components/schemas/BotStatusEvent'
+
+  schemas:
+    SubscribeMessage:
+      type: object
+      description: Client message to subscribe/unsubscribe from channels
+      required:
+        - action
+        - channels
+      properties:
+        action:
+          type: string
+          enum: [subscribe, unsubscribe]
+          description: Action to perform
+        channels:
+          type: array
+          description: List of channels to subscribe/unsubscribe
+          items:
+            type: string
+            enum: [price, orderflow, patterns, orders, positions, portfolio, risk, bot]
+      example:
+        action: subscribe
+        channels: [price, orderflow, patterns, risk]
+
+    BaseEvent:
+      type: object
+      description: Base event schema for all Event Bus events
+      required:
+        - channel
+        - ts
+        - bot_id
+      properties:
+        channel:
+          type: string
+          description: Redis pub/sub channel name
+        ts:
+          type: string
+          format: date-time
+          description: Timestamp in UTC ISO-8601
+        bot_id:
+          type: string
+          description: Identifier for the trading bot that generated the event
+
+    CandleEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Completed candle event.
+
+            **Source:** app.trading.events.schemas.CandleEvent (AUT-366)
+            **Channel format:** `nqhub.candle.{timeframe}`
+          required:
+            - timeframe
+            - open
+            - high
+            - low
+            - close
+            - volume
+            - delta
+            - poc
+          properties:
+            timeframe:
+              type: string
+              enum: [30s, 1min, 5min, 15min, 1h, 4h, 1d, 1w]
+              description: Candle timeframe
+            open:
+              type: number
+              format: float
+              description: Open price
+            high:
+              type: number
+              format: float
+              description: High price
+            low:
+              type: number
+              format: float
+              description: Low price
+            close:
+              type: number
+              format: float
+              description: Close price
+            volume:
+              type: integer
+              description: Total volume
+            delta:
+              type: integer
+              description: Delta (buy volume - sell volume)
+            poc:
+              type: number
+              format: float
+              description: Point of Control price
+      example:
+        channel: nqhub.candle.1min
+        ts: '2024-03-31T14:30:00Z'
+        bot_id: bot_001
+        timeframe: 1min
+        open: 18250.00
+        high: 18255.25
+        low: 18248.75
+        close: 18253.50
+        volume: 1234
+        delta: 567
+        poc: 18252.00
+
+    PatternEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            ICT pattern detected event.
+
+            **Source:** app.trading.events.schemas.PatternEvent (AUT-366)
+            **Channel format:** `nqhub.pattern.{type}`
+          required:
+            - pattern_type
+            - direction
+            - top
+            - bottom
+            - timeframe
+            - status
+          properties:
+            pattern_type:
+              type: string
+              enum: [fvg, ob, lp, bb]
+              description: Pattern type (Fair Value Gap, Order Block, Liquidity Pool, Breaker Block)
+            direction:
+              type: string
+              enum: [bullish, bearish]
+              description: Pattern direction
+            top:
+              type: number
+              format: float
+              description: Top of pattern zone
+            bottom:
+              type: number
+              format: float
+              description: Bottom of pattern zone
+            timeframe:
+              type: string
+              description: Timeframe where pattern was detected
+            status:
+              type: string
+              enum: [active, mitigated, broken]
+              description: Pattern status
+      example:
+        channel: nqhub.pattern.fvg
+        ts: '2024-03-31T14:35:00Z'
+        bot_id: bot_001
+        pattern_type: fvg
+        direction: bullish
+        top: 18260.00
+        bottom: 18255.00
+        timeframe: 5min
+        status: active
+
+    RiskCheckEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Pre-trade risk check result event.
+
+            **Source:** app.trading.events.schemas.RiskCheckEvent (AUT-366)
+            **Channel:** `nqhub.risk.check`
+          required:
+            - check_name
+            - result
+            - reason
+            - trigger_kill_switch
+            - account_balance
+            - current_pnl
+          properties:
+            check_name:
+              type: string
+              description: Name of the risk check performed
+            result:
+              type: string
+              enum: [PASSED, REJECTED]
+              description: Check result
+            reason:
+              type: string
+              description: Reason for rejection (if applicable)
+              default: ''
+            trigger_kill_switch:
+              type: boolean
+              description: Whether to activate kill switch
+              default: false
+            account_balance:
+              type: number
+              format: float
+              description: Current account balance
+            current_pnl:
+              type: number
+              format: float
+              description: Current profit/loss
+      example:
+        channel: nqhub.risk.check
+        ts: '2024-03-31T14:40:00Z'
+        bot_id: bot_001
+        check_name: daily_loss_limit
+        result: PASSED
+        reason: ''
+        trigger_kill_switch: false
+        account_balance: 25000.00
+        current_pnl: 150.00
+
+    KillSwitchEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Kill switch activated event (HIGHEST PRIORITY).
+
+            **Source:** app.trading.events.schemas.KillSwitchEvent (AUT-366)
+            **Channel:** `nqhub.risk.kill_switch`
+
+            ⚠️ **CRITICAL:** Always processed first. Frontend must display emergency alert.
+          required:
+            - scope
+            - reason
+            - triggered_by
+            - positions_closed
+            - orders_cancelled
+          properties:
+            scope:
+              type: string
+              enum: [per_bot, global]
+              description: Kill switch scope
+            reason:
+              type: string
+              description: Reason for activation
+            triggered_by:
+              type: string
+              enum: [manual, circuit_breaker]
+              description: What triggered the kill switch
+            positions_closed:
+              type: integer
+              description: Number of positions closed
+            orders_cancelled:
+              type: integer
+              description: Number of orders cancelled
+      example:
+        channel: nqhub.risk.kill_switch
+        ts: '2024-03-31T14:45:00Z'
+        bot_id: bot_001
+        scope: per_bot
+        reason: Daily loss limit exceeded (-$1500)
+        triggered_by: circuit_breaker
+        positions_closed: 2
+        orders_cancelled: 3
+
+    OrderEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Order status change event.
+
+            **Source:** app.trading.events.schemas.OrderEvent (AUT-366)
+            **Channel format:** `exec.order.{status}`
+          required:
+            - order_id
+            - client_order_id
+            - side
+            - contracts
+            - status
+          properties:
+            order_id:
+              type: string
+              format: uuid
+              description: Internal order UUID
+            client_order_id:
+              type: string
+              description: Client order identifier
+            broker_order_id:
+              type: string
+              nullable: true
+              description: Broker's order ID (from Rithmic/etc)
+            bracket_role:
+              type: string
+              enum: [ENTRY, TP, SL]
+              nullable: true
+              description: Bracket role
+            side:
+              type: string
+              enum: [BUY, SELL]
+              description: Order side
+            contracts:
+              type: integer
+              description: Number of contracts
+            fill_price:
+              type: number
+              format: float
+              nullable: true
+              description: Fill price (only for filled orders)
+            status:
+              type: string
+              enum: [SUBMITTED, FILLED, REJECTED, CANCELLED]
+              description: Order status
+      example:
+        channel: exec.order.filled
+        ts: '2024-03-31T14:50:00Z'
+        bot_id: bot_001
+        order_id: 550e8400-e29b-41d4-a716-446655440000
+        client_order_id: ORDER_001
+        broker_order_id: RITHMIC_12345
+        bracket_role: ENTRY
+        side: BUY
+        contracts: 2
+        fill_price: 18250.00
+        status: FILLED
+
+    PositionEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Position update event.
+
+            **Source:** app.trading.events.schemas.PositionEvent (AUT-366)
+            **Channel:** `exec.position.update`
+          required:
+            - symbol
+            - side
+            - contracts
+            - entry_price
+            - current_price
+            - unrealized_pnl
+            - unrealized_pnl_ticks
+          properties:
+            symbol:
+              type: string
+              description: Symbol (e.g., 'NQ')
+            side:
+              type: string
+              enum: [LONG, SHORT]
+              description: Position side
+            contracts:
+              type: integer
+              description: Number of contracts in position
+            entry_price:
+              type: number
+              format: float
+              description: Average entry price
+            current_price:
+              type: number
+              format: float
+              description: Current market price
+            unrealized_pnl:
+              type: number
+              format: float
+              description: Unrealized P&L in dollars
+            unrealized_pnl_ticks:
+              type: number
+              format: float
+              description: Unrealized P&L in ticks (unrealized_pnl / tick_value)
+      example:
+        channel: exec.position.update
+        ts: '2024-03-31T14:55:00Z'
+        bot_id: bot_001
+        symbol: NQ
+        side: LONG
+        contracts: 2
+        entry_price: 18250.00
+        current_price: 18260.00
+        unrealized_pnl: 400.00
+        unrealized_pnl_ticks: 80.0
+
+    PortfolioEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Portfolio snapshot event.
+
+            **Channel:** `nqhub.portfolio.snapshot`
+            **Update frequency:** Every 5 seconds
+          required:
+            - total_balance
+            - unrealized_pnl
+            - realized_pnl_today
+            - open_positions
+            - win_rate
+          properties:
+            total_balance:
+              type: number
+              format: float
+              description: Total account balance
+            unrealized_pnl:
+              type: number
+              format: float
+              description: Total unrealized P&L across all positions
+            realized_pnl_today:
+              type: number
+              format: float
+              description: Total realized P&L for the current trading day
+            open_positions:
+              type: integer
+              description: Number of open positions
+            win_rate:
+              type: number
+              format: float
+              description: Win rate (0.0 to 1.0)
+      example:
+        channel: nqhub.portfolio.snapshot
+        ts: '2024-03-31T15:00:00Z'
+        bot_id: bot_001
+        total_balance: 25400.00
+        unrealized_pnl: 400.00
+        realized_pnl_today: 750.00
+        open_positions: 2
+        win_rate: 0.65
+
+    BotStatusEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          description: |
+            Bot status change event.
+
+            **Channel:** `nqhub.bot.status`
+          required:
+            - status
+            - message
+          properties:
+            status:
+              type: string
+              enum: [INITIALIZING, RUNNING, PAUSED, STOPPED, ERROR, KILLED]
+              description: Bot state
+            message:
+              type: string
+              description: Human-readable status message
+            error_details:
+              type: string
+              nullable: true
+              description: Error details (only for ERROR state)
+      example:
+        channel: nqhub.bot.status
+        ts: '2024-03-31T15:05:00Z'
+        bot_id: bot_001
+        status: RUNNING
+        message: Bot is actively trading
+        error_details: null
