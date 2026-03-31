@@ -33,26 +33,26 @@ type PatternTab = 'fvg' | 'orderblocks' | 'liquiditypools';
 // Available timeframes
 const TIMEFRAMES: Timeframe[] = ['1min', '5min', '15min', '30min', '1hour', '4hour', '1day'];
 
-// Default filters
+// Default filters - AUT-341: NQ hardcoded, 25 items per page
 const DEFAULT_FVG_FILTERS: FVGFilters = {
-  symbol: 'NQH25',
+  symbol: 'NQ',
   timeframe: '5min',
   page: 1,
-  page_size: 50,
+  page_size: 25, // AUT-341 spec: 25 items per page
 };
 
 const DEFAULT_OB_FILTERS: OrderBlockFilters = {
-  symbol: 'NQH25',
+  symbol: 'NQ',
   timeframe: '5min',
   page: 1,
-  page_size: 50,
+  page_size: 25, // AUT-341 spec: 25 items per page
 };
 
 const DEFAULT_LP_FILTERS: LiquidityPoolFilters = {
-  symbol: 'NQH25',
+  symbol: 'NQ',
   timeframe: '5min',
   page: 1,
-  page_size: 50,
+  page_size: 25, // AUT-341 spec: 25 items per page
 };
 
 export function PatternDetection() {
@@ -276,21 +276,16 @@ export function PatternDetection() {
                     </Button>
                   </div>
 
-                  {/* Symbol input */}
+                  {/* Symbol input - AUT-341: NQ hardcoded */}
                   <div className="flex items-center gap-2">
                     <Label htmlFor="symbol">Symbol:</Label>
                     <Input
                       id="symbol"
                       type="text"
-                      value={fvgFilters.symbol}
-                      onChange={(e) => {
-                        const symbol = e.target.value.toUpperCase();
-                        setFvgFilters(prev => ({ ...prev, symbol }));
-                        setObFilters(prev => ({ ...prev, symbol }));
-                        setLpFilters(prev => ({ ...prev, symbol }));
-                      }}
-                      className="w-[100px]"
-                      placeholder="NQH25"
+                      value="NQ"
+                      disabled
+                      className="w-[100px] bg-muted"
+                      placeholder="NQ"
                     />
                   </div>
                 </div>
@@ -307,15 +302,27 @@ export function PatternDetection() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="fvg" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Fair Value Gaps
+                <span className="inline-flex items-center gap-1.5">
+                  Fair Value Gaps
+                  <span className="inline-flex gap-0.5">
+                    <span className="w-2 h-2 rounded-full bg-[#3b82f6]" title="Bullish FVG" />
+                    <span className="w-2 h-2 rounded-full bg-[#ef4444]" title="Bearish FVG" />
+                  </span>
+                </span>
               </TabsTrigger>
               <TabsTrigger value="orderblocks" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Order Blocks
+                <span className="inline-flex items-center gap-1.5">
+                  Order Blocks
+                  <span className="w-2 h-2 rounded-full bg-[#f97316]" title="Order Block" />
+                </span>
               </TabsTrigger>
               <TabsTrigger value="liquiditypools" className="flex items-center gap-2">
                 <TrendingDown className="h-4 w-4" />
-                Liquidity Pools
+                <span className="inline-flex items-center gap-1.5">
+                  Liquidity Pools
+                  <span className="w-2 h-2 rounded-full bg-[#8b5cf6]" title="Liquidity Pool" />
+                </span>
               </TabsTrigger>
             </TabsList>
 
@@ -325,7 +332,11 @@ export function PatternDetection() {
                 <CardHeader>
                   <CardTitle>Fair Value Gaps (FVG)</CardTitle>
                   <CardDescription>
-                    Price gaps created by imbalance between buyers and sellers
+                    Price gaps created by imbalance between buyers and sellers.
+                    <span className="inline-flex items-center gap-2 ml-2">
+                      Bullish <span className="w-3 h-3 rounded bg-[#3b82f6]" /> #3b82f6 |
+                      Bearish <span className="w-3 h-3 rounded bg-[#ef4444]" /> #ef4444
+                    </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -345,7 +356,10 @@ export function PatternDetection() {
                 <CardHeader>
                   <CardTitle>Order Blocks</CardTitle>
                   <CardDescription>
-                    Last candle before significant impulse move, represents institutional order placement
+                    Last candle before significant impulse move, represents institutional order placement.
+                    <span className="inline-flex items-center gap-2 ml-2">
+                      Color <span className="w-3 h-3 rounded bg-[#f97316]" /> #f97316
+                    </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -365,7 +379,10 @@ export function PatternDetection() {
                 <CardHeader>
                   <CardTitle>Liquidity Pools</CardTitle>
                   <CardDescription>
-                    Areas where stop-loss orders accumulate, creating liquidity
+                    Areas where stop-loss orders accumulate, creating liquidity.
+                    <span className="inline-flex items-center gap-2 ml-2">
+                      Color <span className="w-3 h-3 rounded bg-[#8b5cf6]" /> #8b5cf6
+                    </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
