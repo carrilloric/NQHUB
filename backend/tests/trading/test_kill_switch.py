@@ -64,8 +64,8 @@ class TestKillSwitchPerBot:
     async def test_per_bot_kill_flattens_positions(self, kill_switch, mock_bot):
         """Test that per-bot kill switch flattens all positions."""
         # Setup
-        kill_switch.execution_client.flatten_position = AsyncMock(return_value=True)
-        kill_switch.db_session.query.return_value.filter.return_value.first.return_value = mock_bot
+        kill_switch._execution_client.flatten_position = AsyncMock(return_value=True)
+        kill_switch._db_session.query.return_value.filter.return_value.first.return_value = mock_bot
 
         # Act
         await kill_switch.activate_bot_kill(
@@ -75,21 +75,23 @@ class TestKillSwitchPerBot:
 
         # Assert
         # Should flatten each position
-        assert kill_switch.execution_client.flatten_position.call_count == len(mock_bot.positions)
+        assert kill_switch._execution_client.flatten_position.call_count == len(mock_bot.positions)
 
         # Verify correct positions were flattened
         for position in mock_bot.positions:
-            kill_switch.execution_client.flatten_position.assert_any_call(
+            kill_switch._execution_client.flatten_position.assert_any_call(
                 symbol=position["symbol"],
-                quantity=position["quantity"]
+                quantity=position["quantity"],
+                order_type="MARKET",
+                time_in_force="IOC"
             )
 
     @pytest.mark.asyncio
     async def test_per_bot_kill_cancels_pending_orders(self, kill_switch, mock_bot):
         """Test that per-bot kill switch cancels all pending orders."""
         # Setup
-        kill_switch.execution_client.cancel_order = AsyncMock(return_value=True)
-        kill_switch.db_session.query.return_value.filter.return_value.first.return_value = mock_bot
+        kill_switch._execution_client.cancel_order = AsyncMock(return_value=True)
+        kill_switch._db_session.query.return_value.filter.return_value.first.return_value = mock_bot
 
         # Act
         await kill_switch.activate_bot_kill(
