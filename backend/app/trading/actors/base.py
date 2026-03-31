@@ -6,11 +6,7 @@ from nautilus_trader.common.actor import Actor
 from nautilus_trader.config import ActorConfig
 
 
-<<<<<<< HEAD
 class NQHubActorConfig(ActorConfig, kw_only=True):
-=======
-class NQHubActorConfig(ActorConfig):
->>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
     """Configuration for NQHubActor."""
     bot_id: str
     component_id: Optional[str] = None
