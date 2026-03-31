@@ -8,7 +8,11 @@ from nautilus_trader.trading.strategy import StrategyConfig
 from nautilus_trader.model.data import Bar, TradeTick
 
 
+<<<<<<< HEAD
 class NQHubStrategyConfig(StrategyConfig, kw_only=True):
+=======
+class NQHubStrategyConfig(StrategyConfig):
+>>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
     """Configuration for NQHubStrategy."""
     strategy_id: str  # FK to strategies table
     bot_id: str
@@ -45,13 +49,25 @@ class NQHubStrategy(Strategy):
         self.bot_id = config.bot_id
         self.strategy_id = config.strategy_id
         self.risk_config = config.risk_config
+<<<<<<< HEAD
 
     def on_start(self) -> None:
         """Called when the strategy starts."""
+=======
+        self.is_running = False
+
+    def on_start(self) -> None:
+        """Called when the strategy starts."""
+        self.is_running = True
+>>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
         self.log.info(f"Starting strategy {self.strategy_id} for bot {self.bot_id}")
 
     def on_stop(self) -> None:
         """Called when the strategy stops."""
+<<<<<<< HEAD
+=======
+        self.is_running = False
+>>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
         self.log.info(f"Stopping strategy {self.strategy_id} for bot {self.bot_id}")
 
     def on_bar(self, bar: Bar) -> None:

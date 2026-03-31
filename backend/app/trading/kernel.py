@@ -7,7 +7,11 @@ from nautilus_trader.config import (
     TradingNodeConfig,
     LiveDataEngineConfig,
     LiveExecEngineConfig,
+<<<<<<< HEAD
     LiveRiskEngineConfig,
+=======
+    RiskEngineConfig,
+>>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
     MessageBusConfig,
     DatabaseConfig
 )
@@ -41,7 +45,11 @@ def build_trading_node(bot_id: str, redis_url: str) -> TradingNode:
         exec_engine=LiveExecEngineConfig(
             debug=False  # Disable debug in production
         ),
+<<<<<<< HEAD
         risk_engine=LiveRiskEngineConfig(
+=======
+        risk_engine=RiskEngineConfig(
+>>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
             bypass=False  # Never bypass risk checks
         ),
         message_bus=MessageBusConfig(
