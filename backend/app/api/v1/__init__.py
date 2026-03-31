@@ -3,12 +3,14 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, invitations, candles, patterns, pattern_detection, market_state, audit, system,
     features, backtesting, ml, approval, bots, orders, risk, trades, trade_journal,
-    settings, strategies, data_platform, live_trading, screener, bot_management
+    settings, strategies, live_trading, screener, bot_management
+    # data_platform,  # Replaced by AUT-330 implementation
     # data_export  # Temporarily disabled
 )
 # Temporarily commented out due to merge conflicts in main branch
 # assistant, assistant_tools,
 from app.etl import routes as etl_routes
+from app.api.v1.data import router as data_router  # AUT-330: New Data Platform API
 
 api_router = APIRouter()
 
@@ -16,8 +18,8 @@ api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(invitations.router, prefix="/invitations", tags=["invitations"])
 
-# Data Platform API (CONTRACT-001)
-api_router.include_router(data_platform.router, prefix="/data", tags=["data-platform"])
+# Data Platform API (AUT-330) - Replaces CONTRACT-001 with cursor pagination and CandleStore service
+api_router.include_router(data_router, prefix="/api/v1", tags=["data"])
 
 # Dataset Export to GCS
 # api_router.include_router(data_export.router, prefix="/data", tags=["data-export"])
