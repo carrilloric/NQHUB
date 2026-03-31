@@ -7,13 +7,13 @@ import { http, HttpResponse } from 'msw';
 
 const API_BASE = '/api/v1';
 
-// Mock bot data
+// Mock bot data - AUT-354: status uppercase (RUNNING, STOPPED, HALTED, PAUSED)
 let mockBots = [
   {
     id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Scalping Bot 1',
     strategy_id: '123e4567-e89b-12d3-a456-426614174000',
-    status: 'running',
+    status: 'RUNNING',
     mode: 'live',
     last_heartbeat: new Date(Date.now() - 30000).toISOString(), // 30 seconds ago
     apex_account_id: '789e0123-e89b-12d3-a456-426614174000',
@@ -22,47 +22,71 @@ let mockBots = [
       take_profit: 100,
       position_size: 2,
     },
+    daily_pnl: 245.50,
+    open_contracts: 2,
   },
   {
     id: '660e8400-e29b-41d4-a716-446655440001',
     name: 'Trend Following Bot',
     strategy_id: '234e5678-e89b-12d3-a456-426614174001',
-    status: 'stopped',
+    status: 'STOPPED',
     mode: 'paper',
     last_heartbeat: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
     apex_account_id: null,
     active_params: {},
+    daily_pnl: 0,
+    open_contracts: 0,
+  },
+  {
+    id: '770e8400-e29b-41d4-a716-446655440002',
+    name: 'Halted Bot Example',
+    strategy_id: '345e6789-e89b-12d3-a456-426614174002',
+    status: 'HALTED',
+    mode: 'live',
+    last_heartbeat: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
+    apex_account_id: '890e1234-e89b-12d3-a456-426614174002',
+    active_params: {},
+    daily_pnl: -150.25,
+    open_contracts: 0,
   },
 ];
 
-// Mock state log data
+// Mock state log data - AUT-354: status uppercase
 const mockStateLogs: Record<string, any[]> = {
   '550e8400-e29b-41d4-a716-446655440000': [
     {
-      from: 'stopped',
-      to: 'running',
+      from: 'STOPPED',
+      to: 'RUNNING',
       reason: 'User initiated start',
       timestamp: new Date(Date.now() - 3600000).toISOString(),
     },
     {
-      from: 'running',
-      to: 'error',
+      from: 'RUNNING',
+      to: 'PAUSED',
       reason: 'Connection lost to Rithmic',
       timestamp: new Date(Date.now() - 3000000).toISOString(),
     },
     {
-      from: 'error',
-      to: 'running',
+      from: 'PAUSED',
+      to: 'RUNNING',
       reason: 'Connection restored',
       timestamp: new Date(Date.now() - 2940000).toISOString(),
     },
   ],
   '660e8400-e29b-41d4-a716-446655440001': [
     {
-      from: 'running',
-      to: 'stopped',
+      from: 'RUNNING',
+      to: 'STOPPED',
       reason: 'User initiated stop',
       timestamp: new Date(Date.now() - 7200000).toISOString(),
+    },
+  ],
+  '770e8400-e29b-41d4-a716-446655440002': [
+    {
+      from: 'RUNNING',
+      to: 'HALTED',
+      reason: 'Kill switch activated - margin call',
+      timestamp: new Date(Date.now() - 600000).toISOString(),
     },
   ],
 };
@@ -95,11 +119,13 @@ export const botsHandlers = [
       id: `bot-${Date.now()}`,
       name: body.name,
       strategy_id: body.strategy_id,
-      status: 'stopped',
+      status: 'STOPPED',
       mode: body.mode,
       last_heartbeat: new Date().toISOString(),
       apex_account_id: body.apex_account_id || null,
       active_params: body.active_params || {},
+      daily_pnl: 0,
+      open_contracts: 0,
     };
 
     mockBots.push(newBot);
@@ -108,7 +134,7 @@ export const botsHandlers = [
     return HttpResponse.json(
       {
         bot_id: newBot.id,
-        status: 'stopped',
+        status: 'STOPPED',
       },
       { status: 201 }
     );
@@ -126,23 +152,23 @@ export const botsHandlers = [
       );
     }
 
-    if (bot.status === 'running') {
+    if (bot.status === 'RUNNING') {
       return HttpResponse.json(
         { detail: 'Bot is already running' },
         { status: 409 }
       );
     }
 
-    if (bot.status === 'killed') {
+    if (bot.status === 'HALTED') {
       return HttpResponse.json(
-        { detail: 'Cannot start a killed bot' },
+        { detail: 'Cannot start a halted bot - use resume endpoint' },
         { status: 409 }
       );
     }
 
     // Update bot status
     const previousStatus = bot.status;
-    bot.status = 'running';
+    bot.status = 'RUNNING';
     bot.last_heartbeat = new Date().toISOString();
 
     // Add state log entry
@@ -151,14 +177,14 @@ export const botsHandlers = [
     }
     mockStateLogs[bot.id].push({
       from: previousStatus,
-      to: 'running',
+      to: 'RUNNING',
       reason: 'User initiated start',
       timestamp: new Date().toISOString(),
     });
 
     return HttpResponse.json({
       bot_id: bot.id,
-      status: 'running',
+      status: 'RUNNING',
       last_heartbeat: bot.last_heartbeat,
     });
   }),
@@ -177,7 +203,7 @@ export const botsHandlers = [
 
     // Update bot status
     const previousStatus = bot.status;
-    bot.status = 'stopped';
+    bot.status = 'STOPPED';
     bot.last_heartbeat = new Date().toISOString();
 
     // Add state log entry
@@ -186,14 +212,14 @@ export const botsHandlers = [
     }
     mockStateLogs[bot.id].push({
       from: previousStatus,
-      to: 'stopped',
+      to: 'STOPPED',
       reason: 'User initiated stop',
       timestamp: new Date().toISOString(),
     });
 
     return HttpResponse.json({
       bot_id: bot.id,
-      status: 'stopped',
+      status: 'STOPPED',
       last_heartbeat: bot.last_heartbeat,
     });
   }),
@@ -213,7 +239,7 @@ export const botsHandlers = [
 
     // Update bot status
     const previousStatus = bot.status;
-    bot.status = 'killed';
+    bot.status = 'HALTED';
     bot.last_heartbeat = new Date().toISOString();
 
     // Add state log entry
@@ -222,14 +248,14 @@ export const botsHandlers = [
     }
     mockStateLogs[bot.id].push({
       from: previousStatus,
-      to: 'killed',
+      to: 'HALTED',
       reason: body.reason || 'User initiated kill',
       timestamp: new Date().toISOString(),
     });
 
     return HttpResponse.json({
       bot_id: bot.id,
-      status: 'killed',
+      status: 'HALTED',
       positions_closed: 3,
       orders_cancelled: 5,
       timestamp: new Date().toISOString(),
@@ -248,7 +274,7 @@ export const botsHandlers = [
       );
     }
 
-    const runningBots = mockBots.filter((bot) => bot.status === 'running');
+    const runningBots = mockBots.filter((bot) => bot.status === 'RUNNING');
     const affected_bots: any[] = [];
 
     let positionsClosedTotal = 0;
@@ -256,7 +282,7 @@ export const botsHandlers = [
 
     runningBots.forEach((bot) => {
       const previousStatus = bot.status;
-      bot.status = 'killed';
+      bot.status = 'HALTED';
       bot.last_heartbeat = new Date().toISOString();
 
       const positionsClosed = Math.floor(Math.random() * 5) + 1;
@@ -277,7 +303,7 @@ export const botsHandlers = [
       }
       mockStateLogs[bot.id].push({
         from: previousStatus,
-        to: 'killed',
+        to: 'HALTED',
         reason: body.reason || 'Global kill switch activated',
         timestamp: new Date().toISOString(),
       });
