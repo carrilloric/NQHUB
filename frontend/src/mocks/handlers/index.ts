@@ -17,6 +17,7 @@ import { assistantHandlers } from './assistant.handlers';
 import { websocketHandlers } from './websocket.handlers';
 import { dataExplorerHandlers } from './data-explorer.handlers';
 import { patternsHandlers } from './patterns.handlers';
+import { journalHandlers } from './journal.handlers';
 
 export const handlers = [
   ...authHandlers,
@@ -34,4 +35,5 @@ export const handlers = [
   ...websocketHandlers,
   ...dataExplorerHandlers,
   ...patternsHandlers,
+  ...journalHandlers,
 ];
