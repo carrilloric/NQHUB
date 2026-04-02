@@ -1,56 +1,37 @@
 """
-<<<<<<< HEAD
+Trading Kernel for NautilusTrader with VectorBT Pro and Rithmic adapter.
+
+Combines:
+- AUT-336: VectorBT Pro backtesting engine configuration
+- AUT-345: Rithmic live adapter with async_rithmic
+
 TradingNode builder for NautilusTrader.
 One TradingNode per bot instance - never shared between bots.
 """
+from typing import Optional
+
 from nautilus_trader.live.node import TradingNode
 from nautilus_trader.config import (
     TradingNodeConfig,
     LiveDataEngineConfig,
     LiveExecEngineConfig,
-<<<<<<< HEAD
-    LiveRiskEngineConfig,
-=======
-    RiskEngineConfig,
->>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
+    RiskEngineConfig,  # Using RiskEngineConfig for both VectorBT and live trading
     MessageBusConfig,
     DatabaseConfig
 )
 from nautilus_trader.model.identifiers import TraderId
 from app.config import settings
 
-
-def build_trading_node(bot_id: str, redis_url: str) -> TradingNode:
-    """
-    Build a TradingNode for a specific bot instance.
-
-    Args:
-        bot_id: Unique bot identifier
-        redis_url: Redis connection URL for MessageBus backing
-=======
-Trading Kernel (Placeholder for AUT-344)
-
-NautilusTrader kernel setup with Rithmic adapter registration.
-This file will be completed when AUT-344 (NautilusTrader core) is implemented.
-
-References:
-- AUT-344: NautilusTrader core setup
-- AUT-345: Rithmic live adapter (this implementation)
-"""
-from typing import Optional
-
-# Placeholder imports - will be available when AUT-344 is complete
+# Rithmic adapter imports
 try:
-    from nautilus_trader.live.node import TradingNode
-    from nautilus_trader.config import TradingNodeConfig
+    from app.trading.adapters.rithmic_data_client import (
+        RithmicDataClient,
+        RithmicDataClientConfig,
+    )
 except ImportError:
-    TradingNode = None
-    TradingNodeConfig = None
-
-from app.trading.adapters.rithmic_data_client import (
-    RithmicDataClient,
-    RithmicDataClientConfig,
-)
+    # Will be available when Rithmic adapter is implemented
+    RithmicDataClient = None
+    RithmicDataClientConfig = None
 
 
 class RithmicDataClientFactory:
@@ -63,23 +44,22 @@ class RithmicDataClientFactory:
     @staticmethod
     def create(config: RithmicDataClientConfig) -> RithmicDataClient:
         """Create a new RithmicDataClient instance"""
+        if RithmicDataClient is None:
+            raise ImportError("RithmicDataClient not available")
         return RithmicDataClient(config=config)
 
 
-def setup_trading_node(config: Optional[TradingNodeConfig] = None) -> "TradingNode":
+def build_trading_node(bot_id: str, redis_url: str) -> TradingNode:
     """
-    Setup NautilusTrader trading node with Rithmic adapter.
-
-    This function will be implemented when AUT-344 is complete.
+    Build a TradingNode for a specific bot instance.
 
     Args:
-        config: Trading node configuration
->>>>>>> a1d42cd (feat(trading): AUT-345 Rithmic live adapter with async_rithmic)
+        bot_id: Unique bot identifier
+        redis_url: Redis connection URL for MessageBus backing
 
     Returns:
         Configured TradingNode instance
 
-<<<<<<< HEAD
     Notes:
         - One TradingNode per bot - never share between bots
         - Redis backing for MessageBus for event distribution
@@ -95,11 +75,7 @@ def setup_trading_node(config: Optional[TradingNodeConfig] = None) -> "TradingNo
         exec_engine=LiveExecEngineConfig(
             debug=False  # Disable debug in production
         ),
-<<<<<<< HEAD
-        risk_engine=LiveRiskEngineConfig(
-=======
         risk_engine=RiskEngineConfig(
->>>>>>> 1ee3282 (feat(AUT-336): Implement VectorBT Pro backtesting engine with Celery workers)
             bypass=False  # Never bypass risk checks
         ),
         message_bus=MessageBusConfig(
@@ -113,7 +89,20 @@ def setup_trading_node(config: Optional[TradingNodeConfig] = None) -> "TradingNo
 
     # Build and return the node
     return TradingNode(config=node_config)
-=======
+
+
+def setup_trading_node(config: Optional[TradingNodeConfig] = None) -> TradingNode:
+    """
+    Setup NautilusTrader trading node with Rithmic adapter.
+
+    This function will be implemented when AUT-344 is complete.
+
+    Args:
+        config: Trading node configuration
+
+    Returns:
+        Configured TradingNode instance
+
     Example:
         >>> node = setup_trading_node()
         >>> node.add_data_client_factory("RITHMIC", RithmicDataClientFactory)
@@ -129,7 +118,7 @@ def setup_trading_node(config: Optional[TradingNodeConfig] = None) -> "TradingNo
     node = TradingNode(config=config)
 
     # Register Rithmic data client factory
-    node.add_data_client_factory("RITHMIC", RithmicDataClientFactory)
+    if RithmicDataClient is not None:
+        node.add_data_client_factory("RITHMIC", RithmicDataClientFactory)
 
     return node
->>>>>>> a1d42cd (feat(trading): AUT-345 Rithmic live adapter with async_rithmic)
