@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0", // IPv4 - compatible with WSL2 port forwarding to Windows
     port: 3001,
     fs: {
-      allow: ["./src/client", "./src/shared", "./src/mocks"],
+      allow: ["./src/client", "./src/shared", "./src/mocks", "./src/hooks", "./src/stores"],
       deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**"],
     },
     proxy: {
@@ -36,5 +36,14 @@ export default defineConfig(({ mode }) => ({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test-setup.ts"],
+    exclude: [
+      "node_modules/**",
+      "dist/**",
+      "e2e/**",
+      "**/*.spec.ts",
+      "**/playwright/**",
+      "**/*.e2e.ts",
+      "**/*.e2e.tsx",
+    ],
   },
 }));
