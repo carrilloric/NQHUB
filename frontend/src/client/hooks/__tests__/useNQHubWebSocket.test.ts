@@ -89,24 +89,23 @@ describe('useNQHubWebSocket', () => {
     // Setup auth mock
     (useAuth as any).mockReturnValue({ token: mockToken });
 
-    // Replace global WebSocket with mock
-    global.WebSocket = MockWebSocket as any;
-
-    // Capture created WebSocket instance
-    const OriginalWebSocket = MockWebSocket;
-    global.WebSocket = class extends OriginalWebSocket {
+    // Replace global WebSocket with mock using vi.stubGlobal
+    const WebSocketMock = class extends MockWebSocket {
       constructor(url: string) {
         super(url);
         mockWebSocket = this;
         // Capture sent messages
         this.onSend((data) => sentMessages.push(data));
       }
-    } as any;
+    };
+
+    vi.stubGlobal('WebSocket', WebSocketMock);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     vi.clearAllTimers();
+    vi.unstubAllGlobals();
   });
 
   /**
