@@ -13,6 +13,10 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt requirements-dev.txt ./
 COPY requirements-ai.txt ./
 
+# Add VectorBT Pro token for private PyPI
+ARG VECTORBTPRO_TOKEN
+ENV VECTORBTPRO_TOKEN=${pvt_4f8d7c01}
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements-ai.txt

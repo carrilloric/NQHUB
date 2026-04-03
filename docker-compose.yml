@@ -47,6 +47,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
+      args:
+        - VECTORBTPRO_TOKEN=${pvt_4f8d7c01}
     container_name: nqhub_worker_1
     depends_on:
       - postgres
@@ -76,6 +78,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
+      args:
+        - VECTORBTPRO_TOKEN=${pvt_4f8d7c01}
     container_name: nqhub_worker_2
     depends_on:
       - postgres
@@ -102,6 +106,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
+      args:
+        - VECTORBTPRO_TOKEN=${pvt_4f8d7c01}
     container_name: nqhub_worker_3
     depends_on:
       - postgres
@@ -128,6 +134,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
+      args:
+        - VECTORBTPRO_TOKEN=${pvt_4f8d7c01}
     container_name: nqhub_worker_4
     depends_on:
       - postgres
