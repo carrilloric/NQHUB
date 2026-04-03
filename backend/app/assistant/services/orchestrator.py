@@ -9,7 +9,6 @@ import json
 
 from app.assistant.llm.claude_client import get_claude_client
 from app.assistant.llm.gemini_client import get_gemini_memory_client
-from app.assistant.tools.vanna_sql import get_vanna_client
 from app.assistant.tools.status_monitor import get_etl_status, get_pattern_status, get_database_stats
 from app.assistant.tools.system_health import get_system_health
 
@@ -22,7 +21,6 @@ class AssistantOrchestrator:
     def __init__(self):
         self.claude = get_claude_client()
         self.memory = get_gemini_memory_client()
-        self.vanna = get_vanna_client()
 
     def process_message(
         self,
@@ -54,23 +52,12 @@ class AssistantOrchestrator:
 
             # Step 3: Route based on intent
             if intent == "SQL_QUERY":
-                # NEW: 2-stage approach - enhance query with Claude before Vanna
-                enhancement = self._enhance_sql_query(user_message, conversation_history)
-
-                if enhancement.get("needs_clarification"):
-                    response = {
-                        "content": enhancement["clarification_question"],
-                        "metadata": {"needs_clarification": True},
-                        "tool_used": "claude_clarification"
-                    }
-                else:
-                    # Call Vanna with enhanced question
-                    response = self._handle_sql_query(
-                        question=enhancement["enhanced_question"],
-                        memory_context=memory_context,
-                        db=db,
-                        table_hint=enhancement.get("table_hint")
-                    )
+                # SQL query functionality has been removed (Vanna was deprecated in v2)
+                response = {
+                    "content": "SQL query functionality is currently unavailable. This feature was deprecated in v2 and is being replaced with a new implementation.",
+                    "metadata": {"deprecated": True, "reason": "vanna_removed"},
+                    "tool_used": "deprecated_feature"
+                }
             elif intent == "STATUS_CHECK":
                 response = self._handle_status_check(user_message, memory_context, db)
             else:  # GENERAL_CHAT
@@ -91,172 +78,6 @@ class AssistantOrchestrator:
                 "content": f"I encountered an error processing your request: {str(e)}",
                 "metadata": {"error": str(e)},
                 "tool_used": "error_handler"
-            }
-
-    def _enhance_sql_query(self, user_message: str, conversation_history: Optional[list]) -> Dict[str, Any]:
-        """
-        Use Claude to enhance query with context resolution and table selection
-
-        Args:
-            user_message: User's original query
-            conversation_history: Previous conversation turns
-
-        Returns:
-            Dict with enhanced_question, table_hint, extracted_entities, needs_clarification
-        """
-        system_prompt = """You are a SQL query enhancer for a trading analytics system.
-
-Your job is to:
-1. Extract context from previous conversation messages
-2. Identify which candlestick table to use based on temporal keywords:
-   - candlestick_30s: ultra-fast scalping, tick analysis
-   - candlestick_1min: scalping, very short-term
-   - candlestick_5min: intraday trading (DEFAULT for general queries)
-   - candlestick_15min: session analysis
-   - candlestick_1hr: hourly trends
-   - candlestick_4hr: swing trading
-   - candlestick_daily: day-to-day comparisons, daily aggregations
-   - candlestick_weekly: long-term trends, weekly analysis
-3. Resolve references like "ese día", "esa hora", "el mismo mes"
-4. Check if question is ambiguous and needs clarification
-
-IMPORTANT TABLE SELECTION RULES:
-- If query mentions "día", "diario", "daily", "por día" → use candlestick_daily
-- If query mentions "semana", "semanal", "weekly" → use candlestick_weekly
-- If query mentions "hora", "hourly", "cada hora", "por hora" → use candlestick_1hr
-- If query mentions "minutos", specific minute intervals → use appropriate minute table
-- For general queries without time specification → use candlestick_5min (default)
-
-Return JSON:
-{
-  "enhanced_question": "complete standalone question with table hint",
-  "table_hint": "candlestick_xxx",
-  "extracted_entities": {"date": "...", "metric": "..."},
-  "needs_clarification": false,
-  "clarification_question": null
-}
-
-Examples:
-
-Input: "de ese dia que hora tuvo mas volumen"
-Context: Previous answer mentioned 2025-11-20
-Output:
-{
-  "enhanced_question": "use candlestick_1hr: dame las 3 horas con más volumen del día 2025-11-20",
-  "table_hint": "candlestick_1hr",
-  "extracted_entities": {"date": "2025-11-20", "metric": "volume"},
-  "needs_clarification": false
-}
-
-Input: "cual fue el volumen diario promedio de noviembre 2025"
-Context: None
-Output:
-{
-  "enhanced_question": "use candlestick_daily: cual fue el volumen diario promedio de noviembre 2025",
-  "table_hint": "candlestick_daily",
-  "extracted_entities": {"month": "2025-11", "metric": "volume", "aggregation": "average"},
-  "needs_clarification": false
-}
-
-Input: "cual fue el volumen promedio"
-Context: None
-Output:
-{
-  "enhanced_question": null,
-  "table_hint": null,
-  "needs_clarification": true,
-  "clarification_question": "¿De qué período quieres el promedio? (día, semana, mes, hora)"
-}
-"""
-
-        # Build messages with conversation context
-        messages = []
-        if conversation_history:
-            # Include last 3 exchanges for context (6 messages)
-            messages.extend(conversation_history[-6:])
-
-        messages.append({
-            "role": "user",
-            "content": f"Enhance this SQL query: {user_message}"
-        })
-
-        try:
-            response = self.claude.chat(messages=messages, system=system_prompt)
-
-            # Parse JSON response
-            enhancement = json.loads(response["content"])
-            logger.info(f"Query enhancement: {enhancement}")
-
-            return enhancement
-
-        except Exception as e:
-            logger.error(f"Enhancement error: {e}")
-            # Fallback: return original question without enhancement
-            return {
-                "enhanced_question": user_message,
-                "table_hint": None,
-                "extracted_entities": {},
-                "needs_clarification": False
-            }
-
-    def _handle_sql_query(
-        self,
-        question: str,
-        memory_context: str,
-        db: Session,
-        table_hint: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Handle SQL queries using Vanna"""
-        result = self.vanna.ask(question, table_hint=table_hint, auto_train=True)
-
-        if result["success"]:
-            rows = result["results"]
-            count = len(rows)
-
-            # Format response with SQL query displayed first
-            sql_display = f"**Generated SQL Query:**\n```sql\n{result['sql']}\n```\n\n---\n\n"
-
-            # Format results
-            if count == 0:
-                answer = sql_display + "**No results found for your query.**"
-            elif count == 1 and len(rows[0]) == 1:
-                # Single value result
-                value = list(rows[0].values())[0]
-                answer = sql_display + f"**Result:** {value}"
-            else:
-                # Multiple rows/columns - create markdown table
-                answer = sql_display + f"**Found {count} results:**\n\n"
-                if count <= 10:
-                    # Show all results as table
-                    if rows:
-                        headers = list(rows[0].keys())
-                        answer += "| " + " | ".join(headers) + " |\n"
-                        answer += "|" + "|".join(["---" for _ in headers]) + "|\n"
-                        for row in rows:
-                            answer += "| " + " | ".join(str(v) for v in row.values()) + " |\n"
-                else:
-                    answer += f"(Showing first 10 of {count} results)\n\n"
-                    headers = list(rows[0].keys())
-                    answer += "| " + " | ".join(headers) + " |\n"
-                    answer += "|" + "|".join(["---" for _ in headers]) + "|\n"
-                    for row in rows[:10]:
-                        answer += "| " + " | ".join(str(v) for v in row.values()) + " |\n"
-
-            return {
-                "content": answer,
-                "metadata": {"sql": result["sql"], "row_count": count},
-                "tool_used": "vanna_sql"
-            }
-        else:
-            # Show SQL even on error
-            sql_display = ""
-            if result.get("sql"):
-                sql_display = f"**Generated SQL Query:**\n```sql\n{result['sql']}\n```\n\n---\n\n"
-
-            return {
-                "content": sql_display + f"**Error executing query:** {result['error']}",
-                "metadata": {"error": result["error"], "sql": result.get("sql")},
-                "tool_used": "vanna_sql_error"
             }
 
     def _handle_status_check(self, question: str, memory_context: str, db: Session) -> Dict[str, Any]:

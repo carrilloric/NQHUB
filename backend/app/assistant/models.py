@@ -56,18 +56,3 @@ class AssistantSystemEvent(Base):
 
     def __repr__(self):
         return f"<AssistantSystemEvent(id={self.id}, event_type={self.event_type}, notified={self.notified})>"
-
-
-class AssistantVannaTraining(Base):
-    """Training data for Vanna.AI to improve NL→SQL over time"""
-    __tablename__ = "assistant_vanna_training"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    question = Column(Text, nullable=False)
-    sql_query = Column(Text, nullable=False)
-    was_successful = Column(Boolean, server_default=text("TRUE"), nullable=False)
-    feedback_score = Column(Integer, nullable=True)  # 1-5 rating from user
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False, index=True)
-
-    def __repr__(self):
-        return f"<AssistantVannaTraining(id={self.id}, question={self.question[:50]}...)>"

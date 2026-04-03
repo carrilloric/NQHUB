@@ -24,10 +24,6 @@ class AssistantConfig:
     MEM0_API_KEY: str | None = settings.MEM0_API_KEY
     MEM0_ENABLED: bool = MEM0_API_KEY is not None
 
-    # Vanna.AI configuration
-    VANNA_CHROMA_PATH: str = "/tmp/nqhub_vanna_chromadb"
-    VANNA_ENABLED: bool = CLAUDE_API_KEY is not None
-
     # Polling configuration for proactive notifications
     POLLING_INTERVAL_SECONDS: int = 15
     MAX_EVENTS_PER_POLL: int = 10
@@ -57,10 +53,6 @@ Respond with ONLY the category name, nothing else."""
 
     # Tool descriptions for LangGraph
     TOOLS = {
-        "vanna_sql": {
-            "name": "query_database",
-            "description": "Execute natural language queries against the NQHUB database. Use for questions about candles, ticks, patterns (FVGs, LPs, OBs), ETL jobs, etc.",
-        },
         "status_monitor": {
             "name": "check_status",
             "description": "Check system status including ETL jobs, pattern detection, database stats, and system health.",
